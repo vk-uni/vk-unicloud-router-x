@@ -1,0 +1,233 @@
+<template>
+  <view class="auth-page">
+    <scroll-view class="auth-scroll" direction="vertical" :show-scrollbar="false">
+      <view class="auth-content" :style="contentStyle">
+        <view class="auth-header">
+          <image class="auth-logo" src="@/static/logo.png" mode="aspectFit" />
+          <view class="auth-heading">
+            <text class="auth-title">欢迎回来</text>
+            <text class="auth-subtitle">登录账号，继续使用</text>
+          </view>
+        </view>
+
+        <view class="auth-form">
+          <view class="auth-field">
+            <text class="auth-label">账号</text>
+            <view class="auth-input-row">
+              <input
+                v-model="form.username"
+                class="auth-input"
+                type="text"
+                :maxlength="100"
+                :disabled="busy"
+                placeholder="用户名 / 手机号 / 邮箱"
+                placeholder-class="auth-placeholder"
+              />
+            </view>
+          </view>
+          <view class="auth-field auth-field-last">
+            <text class="auth-label">密码</text>
+            <view class="auth-input-row">
+              <input
+                v-model="form.password"
+                class="auth-input"
+                :password="!showPassword"
+                :maxlength="128"
+                :disabled="busy"
+                confirm-type="done"
+                placeholder="请输入密码"
+                placeholder-class="auth-placeholder"
+                @confirm="login"
+              />
+              <view class="auth-icon-button" @click="!busy && (showPassword = !showPassword)">
+                <auth-icon :name="showPassword ? 'eye-off' : 'eye'" :size="22" />
+              </view>
+            </view>
+          </view>
+          <view class="auth-forgot">
+            <text class="auth-link" @click="openPage('/pages/login/forget/forget')">忘记密码？</text>
+          </view>
+          <view class="auth-actions auth-login-actions">
+            <text v-if="errorMessage.length > 0" class="auth-error">{{ errorMessage }}</text>
+            <button
+              class="auth-submit"
+              :class="{ 'auth-button-disabled': busy }"
+              type="primary"
+              :hover-class="busy ? 'none' : 'auth-button-hover'"
+              :loading="requestState.password"
+              @click="login"
+            >
+              登录
+            </button>
+          </view>
+        </view>
+        <view class="auth-footer">
+          <text class="auth-muted">还没有账号？</text>
+          <text class="auth-link" @click="openPage('/pages/login/register/register')">注册账号</text>
+        </view>
+        <!-- #ifdef MP-WEIXIN || APP -->
+        <view v-if="showWeixin" class="auth-other-login">
+          <view class="auth-other-heading">
+            <view class="auth-other-line"></view>
+            <text class="auth-other-label">其他登录方式</text>
+            <view class="auth-other-line"></view>
+          </view>
+          <view class="auth-wechat" :class="{ 'auth-button-disabled': busy }" hover-class="auth-button-hover" @click="loginByWeixin">
+            <view class="auth-wechat-icon"><auth-icon name="wechat" :size="28" /></view>
+            <text class="auth-wechat-label">{{ requestState.wechat ? '登录中...' : '微信登录' }}</text>
+          </view>
+        </view>
+        <text v-else-if="weixinHint.length > 0" class="auth-note">{{ weixinHint }}</text>
+        <!-- #endif -->
+        <view class="auth-agreement-area"><auth-agreement v-model="agreed" :disabled="busy" /></view>
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup>
+  import { computed, getCurrentInstance, reactive, ref } from 'vue';
+  // 引入 vk 对象
+  import vk from '@/uni_modules/vk-unicloud';
+  import AuthIcon from '../components/auth-icon.uvue';
+  import AuthAgreement from '../components/auth-agreement.uvue';
+  import { captureLoginOptions, finishLogin, getLoginQuery, getRequestMessage, useAuthLayout } from '../utils.js';
+
+  const pageInstance = getCurrentInstance()?.proxy;
+  const { contentStyle } = useAuthLayout();
+  const form = reactive({ username: '', password: '' });
+  const requestState = reactive({ password: false, wechat: false });
+  // 两种登录方式共用忙碌状态，防止重复提交。
+  const busy = computed(() => requestState.password || requestState.wechat);
+  const errorMessage = ref('');
+  const agreed = ref(false);
+  const showPassword = ref(false);
+  const showWeixin = ref(false);
+  const weixinHint = ref('');
+  let pageOptions = {};
+  let disposed = false;
+
+  // 登录
+  async function login() {
+    if (busy.value) return;
+    if (!checkAgreement()) return;
+    if (vk.pubfn.isNull(form.username.trim())) {
+      vk.toast('请输入账号', 'none');
+      return;
+    }
+    if (vk.pubfn.isNull(form.password)) {
+      vk.toast('请输入密码', 'none');
+      return;
+    }
+    errorMessage.value = '';
+    requestState.password = true;
+    try {
+      const res = await vk.userCenter.login({
+        loading: { that: requestState, name: 'password' },
+        data: {
+          username: form.username.trim(),
+          password: form.password,
+        },
+      });
+      if (vk.pubfn.isNull(res)) return;
+      form.password = '';
+      loginSuccess(res);
+    } catch (error) {
+      errorMessage.value = getRequestMessage(error, '登录失败，请稍后重试');
+    } finally {
+      requestState.password = false;
+    }
+  }
+
+  // #ifdef MP-WEIXIN || APP
+  // 微信登录
+  async function loginByWeixin() {
+    if (busy.value || !showWeixin.value) return;
+    if (!checkAgreement()) return;
+    errorMessage.value = '';
+    // 微信授权期间也拦截重复登录。
+    requestState.wechat = true;
+    try {
+      const res = await vk.userCenter.loginByWeixin({
+        loading: { that: requestState, name: 'wechat' },
+      });
+      if (vk.pubfn.isNull(res)) return;
+      loginSuccess(res);
+    } catch (error) {
+      const message = getRequestMessage(error, '微信登录失败，请稍后重试');
+      errorMessage.value = /cancel|取消/i.test(message) || error?.errCode === 1310509 ? '已取消微信登录，你也可以使用账号密码登录' : message;
+    } finally {
+      requestState.wechat = false;
+    }
+  }
+  // #endif
+
+  // 登录成功处理函数
+  function loginSuccess(res) {
+    // 离开页面后，不再处理登录提示和跳转。
+    if (disposed) return;
+    const { userInfo = {} } = res;
+    // 待注销账号先进入注销与恢复页面。
+    if (userInfo.status === 4 && userInfo.close_account && !userInfo.close_account.confirmed) {
+      const closeAccountUrl = vk.getConfig('closeAccount.url');
+      if (vk.pubfn.isNotNull(closeAccountUrl)) {
+        vk.navigate.setOriginalPage(null);
+        vk.reLaunch(closeAccountUrl);
+      } else {
+        vk.toast('用户已注销', 'none');
+      }
+      return;
+    }
+    vk.toast('登录成功');
+    finishLogin(pageOptions, pageInstance);
+  }
+
+  // 打开页面
+  function openPage(url) {
+    if (busy.value) return;
+    vk.navigateTo(url + getLoginQuery(pageOptions));
+  }
+
+  // 检查是否同意协议
+  function checkAgreement() {
+    if (agreed.value) return true;
+    vk.toast('请先阅读并同意用户协议和隐私政策', 'none');
+    return false;
+  }
+
+  // 监听 - 页面每次【加载时】执行(如：前进)
+  onLoad((options) => {
+    // 保留登录后的回跳目标。
+    pageOptions = captureLoginOptions(options);
+    // #ifdef MP-WEIXIN
+    showWeixin.value = true;
+    // #endif
+    // #ifdef APP
+    uni.getProvider({
+      service: 'oauth',
+      success: (res) => {
+        // 兼容不同平台的服务商返回格式。
+        const providers = res.providers ?? res.providerObjects ?? [];
+        const weixinProvider = providers.find((item) => item.id === 'weixin');
+        const providerIds = res.provider ?? [];
+        const available = vk.pubfn.isNotNull(weixinProvider) || providerIds.includes('weixin');
+        const installed = weixinProvider?.isWeChatInstalled;
+        showWeixin.value = available && installed !== false;
+        weixinHint.value = available && installed === false ? '安装微信后可使用微信登录' : '';
+      },
+      fail: () => {
+        weixinHint.value = '暂时无法获取微信登录能力，请使用账号密码登录';
+      },
+    });
+    // #endif
+  });
+
+  // 监听 - 页面每次【卸载时】（一般用于取消页面上的监听器）
+  onUnload(() => {
+    disposed = true;
+  });
+</script>
+
+<style>
+  @import '../css/main.css';
+</style>

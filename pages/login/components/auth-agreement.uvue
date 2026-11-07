@@ -1,0 +1,81 @@
+<template>
+  <view class="auth-agreement">
+    <view
+      class="auth-agreement-check"
+      <!-- #ifndef APP -->
+      :aria-label="modelValue ? '取消同意用户协议和隐私政策' : '同意用户协议和隐私政策'"
+      <!-- #endif -->
+      <!-- #ifdef WEB -->
+      role="checkbox"
+      :tabindex="disabled ? -1 : 0"
+      :aria-checked="modelValue"
+      :aria-disabled="disabled"
+      @keydown.enter.prevent="toggleAgreement"
+      @keydown.space.prevent="toggleAgreement"
+      <!-- #endif -->
+      @click="toggleAgreement"
+    >
+      <auth-icon :name="modelValue ? 'check-circle' : 'circle'" :size="18" :color="modelValue ? 'var(--main-color, #111111)' : '#858585'" />
+    </view>
+    <text class="auth-agreement-copy">
+      <text class="auth-agreement-text" @click="toggleAgreement">我已阅读并同意</text>
+      <text class="auth-agreement-link" @click="openAgreement('用户协议')">《用户协议》</text>
+      <text class="auth-agreement-text">和</text>
+      <text class="auth-agreement-link" @click="openAgreement('隐私政策')">《隐私政策》</text>
+    </text>
+  </view>
+</template>
+
+<script setup>
+  import vk from '@/uni_modules/vk-unicloud';
+  import AuthIcon from './auth-icon.uvue';
+
+  const props = defineProps({ modelValue: { type: Boolean, default: false }, disabled: { type: Boolean, default: false } });
+  const emit = defineEmits(['update:modelValue']);
+
+  function toggleAgreement() {
+    if (!props.disabled) emit('update:modelValue', !props.modelValue);
+  }
+  function openAgreement(name) {
+    vk.toast('你点击了' + name, 'none');
+  }
+</script>
+
+<style>
+  .auth-agreement {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 4px;
+    flex-shrink: 0;
+  }
+  .auth-agreement-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 40px;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0 4px 0 0;
+    border-width: 0;
+    background-color: transparent;
+  }
+  .auth-agreement-copy {
+    flex-shrink: 1;
+    color: #858585;
+    font-size: 12px;
+    line-height: 22px;
+  }
+  .auth-agreement-text {
+    color: #858585;
+    font-size: 12px;
+    line-height: 22px;
+  }
+  .auth-agreement-link {
+    color: var(--main-color, #111111);
+    font-size: 12px;
+    line-height: 22px;
+  }
+</style>

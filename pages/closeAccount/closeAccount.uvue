@@ -1,0 +1,807 @@
+<template>
+  <view class="account-page" :style="{ height: windowHeight + 'px' }">
+    <scroll-view class="page-scroll" direction="vertical">
+      <view class="page-content">
+        <view v-if="isAccountClosed" class="success-card">
+          <view class="success-icon"><text class="success-icon-text">✓</text></view>
+          <text class="success-title">账号注销成功</text>
+          <text class="success-desc">您的账号已完成注销，无法再恢复。</text>
+          <text class="success-desc">感谢您的使用，期待再次相遇。</text>
+          <button class="action-btn success-btn success-action-btn" hover-class="button-hover" @click="goToLogin">返回登录页面</button>
+          <button class="action-btn secondary-btn success-action-btn" hover-class="button-hover" @click="goHome">返回首页</button>
+        </view>
+
+        <view v-else>
+          <view class="status-card">
+            <view class="status-header">
+              <view class="status-icon" :class="isPending ? 'status-cooling' : 'status-normal'">
+                <text class="status-icon-text">{{ isPending ? '!' : '✓' }}</text>
+              </view>
+              <view class="status-info">
+                <text class="status-title">{{ statusTitle }}</text>
+                <text class="status-desc">{{ statusDescription }}</text>
+              </view>
+            </view>
+
+            <view v-if="statusReady && hasSession" class="account-label">
+              <text class="account-label-text">{{ accountName }}</text>
+            </view>
+
+            <view v-if="statusReady && isPending" class="countdown-section">
+              <text class="countdown-label">{{ remaining > 0 ? '冷静期剩余时间' : '冷静期已结束' }}</text>
+              <text class="countdown-time">{{ countdownText }}</text>
+              <view class="progress-track"><view class="progress-fill" :style="{ width: progress + '%' }"></view></view>
+              <text v-if="vk.pubfn.isNotNull(closeTimeText)" class="time-label">冷静期结束：{{ closeTimeText }}</text>
+              <text v-if="remaining <= 0" class="pending-tip">您仍可恢复账号，也可确认完成注销。</text>
+            </view>
+
+            <view v-if="recovered && statusReady && !isPending" class="recovered-notice">
+              <text class="recovered-text">注销申请已取消，账号已恢复。</text>
+            </view>
+          </view>
+
+          <view v-if="vk.pubfn.isNotNull(loadError)" class="notice-card">
+            <text class="error-text">{{ loadError }}</text>
+            <button v-if="hasSession" class="small-btn" :class="{ 'button-disabled': busy }" :hover-class="(busy) ? 'none' : 'button-hover'" :loading="loading.status" @click="retryStatus">重新获取状态</button>
+          </view>
+
+          <view v-if="!hasSession" class="action-section">
+            <button class="action-btn success-btn" hover-class="button-hover" @click="goToLogin">登录后继续</button>
+          </view>
+
+          <view v-if="statusReady && hasSession" class="action-section">
+            <text v-if="vk.pubfn.isNotNull(actionError) && !showConfirmModal" class="action-error">{{ actionError }}</text>
+            <button
+              v-if="!isPending"
+              class="action-btn danger-btn"
+              type="warn"
+              :class="{ 'button-disabled': actionsDisabled }"
+              :hover-class="(actionsDisabled) ? 'none' : 'button-hover'"
+              :loading="loading.close || operation === 'close'"
+              @click="askToClose"
+            >
+              申请注销账号
+            </button>
+            <button
+              v-if="isPending"
+              class="action-btn success-btn"
+              type="primary"
+              :class="{ 'button-disabled': actionsDisabled }"
+              :hover-class="(actionsDisabled) ? 'none' : 'button-hover'"
+              :loading="loading.open || operation === 'open'"
+              @click="askToRestore"
+            >
+              恢复账号
+            </button>
+            <button v-if="isPending" class="action-btn outline-danger-btn" :class="{ 'button-disabled': actionsDisabled || remaining > 0 }" :hover-class="(actionsDisabled || remaining > 0) ? 'none' : 'button-hover'" @click="openFinalConfirmation">
+              {{ remaining > 0 ? '冷静期结束后可确认注销' : '确认注销账号' }}
+            </button>
+            <button v-if="recovered && !isPending" class="action-btn secondary-btn" :class="{ 'button-disabled': actionsDisabled }" :hover-class="(actionsDisabled) ? 'none' : 'button-hover'" @click="goHome">返回首页</button>
+          </view>
+
+          <view class="tips-card">
+            <text class="tips-title">注销前，请了解</text>
+            <text class="tips-item">提交申请后将进入 7 天冷静期，以页面显示的结束时间为准。</text>
+            <text class="tips-item">最终确认注销前，您可以取消申请并恢复账号，包括冷静期已结束的情况。</text>
+            <text class="tips-item">冷静期结束后，需要再次确认才能在此完成注销。</text>
+            <text class="tips-item warning-text">最终注销后无法恢复，请谨慎操作。</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view v-if="showConfirmModal" class="modal-overlay" @click="closeFinalConfirmation">
+      <view class="modal-card" @click.stop>
+        <text class="modal-title">确认注销账号</text>
+        <text class="modal-warning">最终注销后，账号将无法恢复。</text>
+        <text class="input-label">请输入“确认注销”以继续</text>
+        <input v-model="confirmText" class="confirm-input" placeholder="确认注销" placeholder-class="confirm-placeholder" :maxlength="20" :disabled="busy" />
+        <text v-if="vk.pubfn.isNotNull(actionError)" class="modal-error">{{ actionError }}</text>
+        <view class="modal-actions">
+          <button class="modal-btn cancel-btn" :class="{ 'button-disabled': busy }" :hover-class="(busy) ? 'none' : 'button-hover'" @click="closeFinalConfirmation">取消</button>
+          <button
+            class="modal-btn danger-btn"
+            type="warn"
+            :class="{ 'button-disabled': busy || confirmText.trim() !== '确认注销' }"
+            :hover-class="(busy || confirmText.trim() !== '确认注销') ? 'none' : 'button-hover'"
+            :loading="loading.confirm || operation === 'confirm'"
+            @click="confirmCloseAccount"
+          >
+            确认注销
+          </button>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  import { computed, reactive, ref } from 'vue';
+  import { onHide, onResize, onShow, onUnload } from '@dcloudio/uni-app';
+  import vk from '@/uni_modules/vk-unicloud';
+
+  const windowHeight = ref(uni.getWindowInfo().windowHeight);
+  const loading = reactive({ status: false, close: false, open: false, confirm: false });
+  const account = reactive({ status: 0, nickname: '', close_account: { confirmed: 0, apply_time: 0, close_time: 0 } });
+  const hasSession = ref(vk.checkToken());
+  const statusReady = ref(false);
+  const loadError = ref('');
+  const actionError = ref('');
+  const operation = ref('');
+  const nativeConfirmOpen = ref(false);
+  const showConfirmModal = ref(false);
+  const confirmText = ref('');
+  const remaining = ref(0);
+  const destroyed = ref(false);
+  const recovered = ref(false);
+
+  let countdownTimer;
+  let remainingDeadline = 0;
+  let pageVisible = false;
+  let disposed = false;
+  let loginPrompted = false;
+
+  const isPending = computed(() => account.status === 4 && account.close_account.confirmed === 0);
+  const isAccountClosed = computed(() => destroyed.value || (statusReady.value && account.status === 4 && account.close_account.confirmed === 1));
+  const busy = computed(() => loading.status || loading.close || loading.open || loading.confirm || vk.pubfn.isNotNull(operation.value));
+  const actionsDisabled = computed(() => busy.value || nativeConfirmOpen.value || showConfirmModal.value);
+  const accountName = computed(() => (vk.pubfn.isNotNull(account.nickname) ? account.nickname : '当前登录账号'));
+  const closeTimeText = computed(() => (account.close_account.close_time > 0 ? vk.pubfn.timeFormat(account.close_account.close_time, 'yyyy-MM-dd hh:mm:ss') : ''));
+  const statusTitle = computed(() => {
+    if (!hasSession.value) return '请先登录账号';
+    if (!statusReady.value) return vk.pubfn.isNotNull(loadError.value) ? '暂未获取账号状态' : '正在获取账号状态';
+    if (isPending.value) return remaining.value > 0 ? '账号注销冷静期' : '等待确认注销';
+    if (recovered.value) return '账号已恢复';
+    const titles = ['账号状态正常', '账号已禁用', '账号审核中', '账号审核未通过'];
+    return titles[account.status] ?? '当前账号状态';
+  });
+  const statusDescription = computed(() => {
+    if (!hasSession.value) return '登录后查看注销状态或恢复账号';
+    if (!statusReady.value) return '请以最新获取的账号状态为准';
+    if (isPending.value) return '最终确认注销前，仍可恢复账号';
+    return '当前没有待处理的注销申请';
+  });
+  const countdownText = computed(() => {
+    const totalSeconds = Math.ceil(remaining.value / 1000);
+    if (totalSeconds <= 0) return '可恢复或确认注销';
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${days} 天 ${hours} 时 ${minutes} 分 ${seconds} 秒`;
+  });
+  const progress = computed(() => {
+    const total = account.close_account.close_time - account.close_account.apply_time;
+    if (total <= 0) return 0;
+    return Math.max(0, Math.min(100, (1 - remaining.value / total) * 100));
+  });
+
+  function errorMessage(error, fallback) {
+    return vk.pubfn.isNotNull(error?.msg) ? String(error.msg) : fallback;
+  }
+
+  function stopCountdown() {
+    if (typeof countdownTimer !== 'undefined') {
+      clearInterval(countdownTimer);
+      countdownTimer = undefined;
+    }
+  }
+
+  function updateRemaining() {
+    remaining.value = Math.max(0, remainingDeadline - Date.now());
+    if (remaining.value === 0) stopCountdown();
+  }
+
+  function startCountdown(duration) {
+    stopCountdown();
+    // 使用服务端剩余时长建立本地锚点，不按定时器触发次数累减。
+    remainingDeadline = Date.now() + Math.max(0, duration);
+    updateRemaining();
+    if (pageVisible && remaining.value > 0) countdownTimer = setInterval(updateRemaining, 1000);
+  }
+
+  async function refreshStatus() {
+    if (loading.status || isAccountClosed.value || disposed) return false;
+    stopCountdown();
+    statusReady.value = false;
+    loadError.value = '';
+    try {
+      const res = await vk.userCenter.getCoolingStatus({
+        loading: { that: loading, name: 'status' },
+        fail: (error) => {
+          if (!disposed) loadError.value = errorMessage(error, '暂时无法获取账号状态，请重试。');
+        },
+      });
+      if (disposed) return false;
+      // 公共查询接口在 token 失效时可能返回成功，但不包含账号状态。
+      if (vk.pubfn.isNull(res.status)) {
+        hasSession.value = false;
+        loadError.value = '登录状态已失效，请重新登录。';
+        return false;
+      }
+      account.status = res.status;
+      account.nickname = vk.pubfn.isNotNull(res.nickname) ? res.nickname : '';
+      account.close_account = vk.pubfn.isNotNull(res.close_account) ? res.close_account : { confirmed: 0, apply_time: 0, close_time: 0 };
+      if (isPending.value && !Number.isFinite(res.duration)) {
+        loadError.value = '暂未获取到冷静期时间，请重新获取状态。';
+        return false;
+      }
+      hasSession.value = true;
+      statusReady.value = true;
+      if (isPending.value) {
+        startCountdown(res.duration);
+      } else {
+        remaining.value = 0;
+      }
+      return true;
+    } catch (error) {
+      if (!disposed && vk.pubfn.isNull(loadError.value)) loadError.value = errorMessage(error, '暂时无法获取账号状态，请重试。');
+      return false;
+    }
+  }
+
+  function retryStatus() {
+    if (!busy.value) refreshStatus();
+  }
+
+  function askToClose() {
+    if (actionsDisabled.value || !statusReady.value) return;
+    actionError.value = '';
+    nativeConfirmOpen.value = true;
+    vk.confirm({
+      title: '申请注销账号',
+      content: '提交后将进入 7 天冷静期。最终确认注销前，您可以恢复账号。确定提交申请吗？',
+      confirmText: '申请注销',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) applyCloseAccount();
+      },
+      complete: () => {
+        nativeConfirmOpen.value = false;
+      },
+    });
+  }
+
+  async function applyCloseAccount() {
+    if (busy.value || disposed) return;
+    operation.value = 'close';
+    recovered.value = false;
+    try {
+      const res = await vk.userCenter.closeAccount({
+        loading: { that: loading, name: 'close' },
+        fail: (error) => {
+          actionError.value = errorMessage(error, '申请注销失败，请重试。');
+        },
+      });
+      if (disposed) return;
+      if (res.destroyed === true) {
+        showDestroyedState();
+      } else {
+        await refreshStatus();
+      }
+    } catch (error) {
+      if (!disposed && vk.pubfn.isNull(actionError.value)) actionError.value = errorMessage(error, '申请注销失败，请重试。');
+    } finally {
+      operation.value = '';
+    }
+  }
+
+  function askToRestore() {
+    if (actionsDisabled.value || !statusReady.value) return;
+    actionError.value = '';
+    nativeConfirmOpen.value = true;
+    vk.confirm({
+      title: '恢复账号',
+      content: '确定取消注销申请并恢复账号吗？',
+      confirmText: '恢复账号',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) restoreAccount();
+      },
+      complete: () => {
+        nativeConfirmOpen.value = false;
+      },
+    });
+  }
+
+  async function restoreAccount() {
+    if (busy.value || disposed) return;
+    operation.value = 'open';
+    try {
+      await vk.userCenter.openAccount({
+        loading: { that: loading, name: 'open' },
+        fail: (error) => {
+          actionError.value = errorMessage(error, '恢复账号失败，请重试。');
+        },
+      });
+      if (disposed) return;
+      stopCountdown();
+      recovered.value = true;
+      await refreshStatus();
+    } catch (error) {
+      if (!disposed && vk.pubfn.isNull(actionError.value)) actionError.value = errorMessage(error, '恢复账号失败，请重试。');
+    } finally {
+      operation.value = '';
+    }
+  }
+
+  function openFinalConfirmation() {
+    if (actionsDisabled.value || !statusReady.value || !isPending.value || remaining.value > 0) return;
+    confirmText.value = '';
+    actionError.value = '';
+    showConfirmModal.value = true;
+  }
+
+  function closeFinalConfirmation() {
+    if (busy.value) return;
+    showConfirmModal.value = false;
+    confirmText.value = '';
+    actionError.value = '';
+  }
+
+  function showDestroyedState() {
+    stopCountdown();
+    destroyed.value = true;
+    showConfirmModal.value = false;
+    confirmText.value = '';
+    actionError.value = '';
+  }
+
+  async function confirmCloseAccount() {
+    if (busy.value || !isPending.value || remaining.value > 0 || confirmText.value.trim() !== '确认注销') return;
+    operation.value = 'confirm';
+    actionError.value = '';
+    try {
+      const res = await vk.userCenter.closeAccount({
+        loading: { that: loading, name: 'confirm' },
+        fail: (error) => {
+          actionError.value = errorMessage(error, '确认注销失败，请重试。');
+        },
+      });
+      if (disposed) return;
+      if (res.destroyed === true) {
+        // vk.userCenter.closeAccount 已清理 token，保留当前页的成功状态。
+        showDestroyedState();
+      } else {
+        showConfirmModal.value = false;
+        confirmText.value = '';
+        await refreshStatus();
+        actionError.value = '账号尚未完成注销，请根据最新状态继续操作。';
+      }
+    } catch (error) {
+      if (!disposed && vk.pubfn.isNull(actionError.value)) actionError.value = errorMessage(error, '确认注销失败，请重试。');
+    } finally {
+      operation.value = '';
+    }
+  }
+
+  function goToLogin() {
+    if (busy.value) return;
+    loginPrompted = true;
+    if (isAccountClosed.value) {
+      vk.navigate.setOriginalPage(null);
+      vk.navigateToLogin({ mode: 'reLaunch' });
+    } else {
+      vk.navigateToLogin({ mode: 'navigateTo' });
+    }
+  }
+
+  function goHome() {
+    if (!actionsDisabled.value) vk.navigateToHome();
+  }
+
+  onShow(() => {
+    pageVisible = true;
+    windowHeight.value = uni.getWindowInfo().windowHeight;
+    if (isAccountClosed.value) return;
+    hasSession.value = vk.checkToken();
+    if (!hasSession.value) {
+      statusReady.value = false;
+      if (!loginPrompted) goToLogin();
+      return;
+    }
+    loginPrompted = false;
+    // 请求未结束时，也恢复被 onHide 停止的倒计时。
+    if (statusReady.value && isPending.value) startCountdown(remainingDeadline - Date.now());
+    if (!busy.value) refreshStatus();
+  });
+
+  onResize((options) => {
+    windowHeight.value = options.size.windowHeight;
+  });
+  onHide(() => {
+    pageVisible = false;
+    stopCountdown();
+  });
+  onUnload(() => {
+    disposed = true;
+    pageVisible = false;
+    stopCountdown();
+  });
+</script>
+
+<style>
+  .account-page {
+    background-color: #ffffff;
+  }
+  .page-scroll {
+    flex: 1;
+    height: 100%;
+  }
+  .page-content {
+    width: 100%;
+    max-width: 640px;
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 24px 20px 40px;
+  }
+  .status-card {
+    padding: 24px;
+    border-radius: 20px;
+    background-color: #f7f7f7;
+  }
+  .status-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .status-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+  }
+  .status-normal {
+    background-color: #f4f4f4;
+  }
+  .status-cooling {
+    background-color: #faf6ef;
+  }
+  .status-icon-text {
+    color: var(--main-color);
+    font-size: 28px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .status-info {
+    flex: 1;
+  }
+  .status-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--main-color);
+  }
+  .status-desc {
+    margin-top: 7px;
+    font-size: 13px;
+    line-height: 21px;
+    color: #858585;
+  }
+  .account-label {
+    margin-top: 20px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background-color: #f4f4f4;
+  }
+  .account-label-text {
+    color: #858585;
+    font-size: 13px;
+  }
+  .countdown-section {
+    margin-top: 24px;
+    padding-top: 22px;
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-top-color: #e5e5e7;
+  }
+  .countdown-label {
+    color: #858585;
+    font-size: 13px;
+  }
+  .countdown-time {
+    margin-top: 12px;
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 32px;
+    color: #8c6a35;
+  }
+  .progress-track {
+    height: 6px;
+    margin-top: 18px;
+    border-radius: 3px;
+    background-color: #f4f4f4;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 6px;
+    border-radius: 3px;
+    background-color: #8c6a35;
+  }
+  .time-label {
+    margin-top: 12px;
+    font-size: 12px;
+    line-height: 20px;
+    color: #858585;
+  }
+  .pending-tip {
+    margin-top: 12px;
+    font-size: 13px;
+    line-height: 21px;
+    color: #8c6a35;
+  }
+  .recovered-notice {
+    margin-top: 20px;
+    padding: 14px;
+    background-color: #f4f4f4;
+    border-radius: 10px;
+  }
+  .recovered-text {
+    font-size: 14px;
+    line-height: 22px;
+    color: #111111;
+  }
+  .action-section {
+    margin-top: 24px;
+  }
+  .action-btn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 50px;
+    line-height: 50px;
+    padding: 0 12px;
+    margin: 0 0 14px;
+    border-width: 0;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .success-btn {
+    color: #ffffff !important;
+    background-color: var(--main-color) !important;
+  }
+  .danger-btn {
+    color: #ffffff !important;
+    background-color: #c43838 !important;
+  }
+  .outline-danger-btn {
+    color: #c43838 !important;
+    background-color: #fff1f1 !important;
+  }
+  .secondary-btn {
+    color: var(--main-color) !important;
+    background-color: #ffffff !important;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--main-color) !important;
+  }
+  .button-hover {
+    opacity: 0.82;
+  }
+  .button-disabled {
+    /* 保留原按钮色相，仅淡化禁用状态。 */
+    opacity: 0.55;
+  }
+  .notice-card {
+    margin-top: 18px;
+    padding: 18px;
+    border-radius: 12px;
+    background-color: #faf6ef;
+  }
+  .error-text {
+    font-size: 14px;
+    line-height: 22px;
+    color: #c43838;
+  }
+  .small-btn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    line-height: 38px;
+    padding: 0 16px;
+    margin-top: 14px;
+    border-width: 0;
+    border-radius: 19px;
+    background-color: #ffffff !important;
+    color: var(--main-color) !important;
+    font-size: 14px;
+  }
+  .action-error {
+    font-size: 14px;
+    line-height: 22px;
+    color: #c43838;
+    margin-bottom: 14px;
+  }
+  .tips-card {
+    margin-top: 24px;
+    padding: 22px;
+    border-radius: 16px;
+    background-color: #f7f7f7;
+  }
+  .tips-title {
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--main-color);
+  }
+  .tips-item {
+    margin-top: 12px;
+    color: #858585;
+    font-size: 13px;
+    line-height: 23px;
+  }
+  .warning-text {
+    color: #c43838;
+  }
+  .success-card {
+    padding: 36px 24px 24px;
+    align-items: center;
+    border-radius: 20px;
+    background-color: #f7f7f7;
+  }
+  .success-icon {
+    width: 80px;
+    height: 80px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 40px;
+    background-color: #f4f4f4;
+    margin-bottom: 24px;
+  }
+  .success-icon-text {
+    color: var(--main-color);
+    font-size: 40px;
+  }
+  .success-title {
+    font-size: 24px;
+    color: var(--main-color);
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .success-desc {
+    color: #858585;
+    font-size: 14px;
+    line-height: 24px;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .success-action-btn {
+    margin-top: 18px;
+    margin-bottom: 0;
+  }
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 99;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-card {
+    width: 100%;
+    max-width: 360px;
+    padding: 24px;
+    box-sizing: border-box;
+    border-radius: 20px;
+    background-color: #ffffff;
+  }
+  .modal-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--main-color);
+  }
+  .modal-warning {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 10px;
+    background-color: #fff1f1;
+    color: #c43838;
+    font-size: 14px;
+    line-height: 22px;
+  }
+  .input-label {
+    margin-top: 22px;
+    margin-bottom: 12px;
+    color: var(--main-color);
+    font-size: 14px;
+  }
+  .confirm-input {
+    height: 48px;
+    padding: 0 14px;
+    border-radius: 10px;
+    box-sizing: border-box;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #858585;
+    background-color: #ffffff;
+    color: var(--main-color);
+    font-size: 16px;
+  }
+  .confirm-placeholder {
+    color: #767676;
+    font-size: 16px;
+  }
+  .modal-error {
+    margin-top: 12px;
+    color: #c43838;
+    font-size: 13px;
+    line-height: 21px;
+  }
+  .modal-actions {
+    display: flex;
+    flex-direction: row;
+    margin-top: 24px;
+  }
+  .modal-btn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 44px;
+    line-height: 44px;
+    padding: 0;
+    margin: 0;
+    border-width: 0;
+    border-radius: 22px;
+    font-size: 15px;
+  }
+  .cancel-btn {
+    margin-right: 12px;
+    color: var(--main-color) !important;
+    background-color: #ffffff !important;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--main-color) !important;
+  }
+  /* #ifndef APP */
+  .account-page view {
+    display: flex;
+    flex-direction: column;
+  }
+  .account-page .status-header,
+  .account-page .modal-actions {
+    flex-direction: row;
+  }
+  .action-btn::after,
+  .modal-btn::after,
+  .small-btn::after {
+    border-width: 0;
+  }
+  /* #endif */
+  /* #ifdef WEB */
+  .action-btn[loading]::before,
+  .modal-btn[loading]::before,
+  .small-btn[loading]::before {
+    width: 16px;
+    height: 16px;
+    margin: 0 8px 0 0;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    background-image: none !important;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: account-button-loading 0.8s linear infinite;
+  }
+  @keyframes account-button-loading {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  /* #endif */
+</style>

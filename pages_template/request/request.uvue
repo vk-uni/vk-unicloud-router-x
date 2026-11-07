@@ -1,0 +1,163 @@
+<template>
+  <view class="demo-page">
+    <scroll-view class="demo-scroll" direction="vertical">
+      <view class="demo-content">
+        <text class="demo-eyebrow">01 / REQUEST</text>
+        <text class="demo-title">一次请求的全过程</text>
+        <text class="demo-description">修改参数，选择调用方式，在下方查看发送内容与真实响应。</text>
+        <view class="demo-card">
+          <text class="demo-card-title">准备参数</text>
+          <input placeholder-class="demo-placeholder" v-model="message" class="demo-input" :maxlength="100" placeholder="输入要发送的文字" :disabled="state.busy" />
+          <text class="demo-label">成功接口：template/pub.db.sleep </text>
+          <text class="demo-body">复用项目已有测试接口，不读写数据库。接口仅返回 code 和 msg，不回显输入的文字。</text>
+        </view>
+        <view v-for="item in cases" :key="item.id" class="demo-card">
+          <text class="demo-card-title">{{ item.title }}</text>
+          <text class="demo-body">{{ item.description }}</text>
+          <button
+            class="demo-button"
+            :class="{ 'demo-button-disabled': state.busy }"
+            type="primary"
+            :hover-class="(state.busy) ? 'none' : 'demo-button-hover'"
+            :loading="state.requestLoading && activeCase === item.id"
+            @click="runRequest(item.id)"
+          >
+            {{ item.button }}
+          </button>
+        </view>
+        <view class="demo-card">
+          <text class="demo-card-title">本次请求</text>
+          <text class="demo-status" :class="{ 'demo-status-error': hasError }">{{ statusText }}</text>
+          <text v-if="hasResult" class="demo-label">{{ requestTime }} · 耗时 {{ elapsed }} ms</text>
+          <text class="demo-label">发送参数</text>
+          <view class="demo-code-box">
+            <text class="demo-code" :selectable="true">{{ paramsText }}</text>
+          </view>
+          <text class="demo-label">返回结果</text>
+          <view class="demo-code-box">
+            <text class="demo-code" :selectable="true">{{ resultText }}</text>
+          </view>
+          <button class="demo-button demo-button-secondary" :class="{ 'demo-button-disabled': state.busy }" :hover-class="(state.busy) ? 'none' : 'demo-button-hover'" @click="clearResult">
+            清空结果
+          </button>
+        </view>
+        <view class="demo-card">
+          <text class="demo-card-title">调用代码</text>
+          <text class="demo-body">选择上方示例后，这里显示对应的核心写法。</text>
+          <text class="demo-label">{{ selectedTitle }}</text>
+          <view class="demo-code-box">
+            <text class="demo-code" :selectable="true">{{ codeText }}</text>
+          </view>
+        </view>
+        <text class="demo-footer">失败示例有意调用不存在的方法，展示路由错误的处理。需要先关联服务空间，并运行或部署已有 router。</text>
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup>
+  import { computed, reactive, ref } from 'vue';
+  import vk from '@/uni_modules/vk-unicloud';
+
+  const successUrl = 'template/pub.db.sleep ';
+  // 保持云端代码不变，用不存在的方法触发真实失败响应。
+  const failureUrl = 'template/pub.db.demoMissingMethod';
+  const message = ref('你好，vk');
+  const state = reactive({ busy: false, requestLoading: false });
+  const activeCase = ref('callback');
+  const hasResult = ref(false);
+  const hasError = ref(false);
+  const statusText = ref('尚未发送请求');
+  const paramsText = ref('{}');
+  const resultText = ref('点击上方按钮查看结果');
+  const elapsed = ref(0);
+  const requestTime = ref('');
+  const cases = [
+    { id: 'callback', title: '回调与按钮加载', description: '通过 success 处理响应，框架自动切换按钮 loading，进行中禁止重复提交。', button: '发送请求' },
+    { id: 'await', title: 'async / await', description: '等待返回值，在 try / catch 中处理结果；同样保留框架的加载与错误处理。', button: '等待请求结果' },
+    { id: 'mask', title: '默认加载遮罩', description: '只设置 title，使用框架默认加载遮罩。title 与 loading 二选一。', button: '体验加载遮罩' },
+    { id: 'defaultError', title: '默认错误提示', description: '不设置 fail 回调，失败时由框架自动弹出提示。', button: '触发默认错误' },
+    { id: 'customError', title: '自定义失败处理', description: '设置 fail 回调，将错误显示在结果区域，接管默认弹窗。', button: '触发并捕获错误' },
+  ];
+  const selectedTitle = computed(() => cases.find((item) => item.id === activeCase.value).title);
+  const codeText = computed(() => {
+    const id = activeCase.value;
+    const url = id === 'defaultError' || id === 'customError' ? failureUrl : successUrl;
+    const loading = id === 'mask' ? "  title: '请求中...'," : "  loading: { that: state, name: 'requestLoading' },";
+    const data = '  data: { message: message.value },';
+    if (id === 'await') {
+      return `try {\n  const res = await vk.callFunction({\n    url: '${url}',\n  ${loading}\n  ${data}\n  });\n  showResult(res);\n} catch (err) {\n  showError(err);\n}`;
+    }
+    const fail = id === 'customError' ? '\n  fail: (err) => showError(err),' : id === 'mask' ? '\n  fail: (err) => {\n    showError(err);\n    vk.alert(err.msg);\n  },' : '';
+    return `vk.callFunction({\n  url: '${url}',\n${loading}\n${data}\n  success: (res) => showResult(res),${fail}\n});`;
+  });
+
+  const showResult = (res, failed, startedAt) => {
+    hasResult.value = true;
+    hasError.value = failed;
+    elapsed.value = Date.now() - startedAt;
+    requestTime.value = vk.pubfn.timeFormat(startedAt, 'yyyy-MM-dd hh:mm:ss');
+    statusText.value = failed ? '请求失败，可查看错误并重新尝试' : '请求成功';
+    resultText.value = JSON.stringify(res instanceof Error ? { message: res.message } : res, null, 2);
+  };
+
+  const runRequest = async (id) => {
+    if (state.busy) return;
+    if (vk.pubfn.isNull(message.value.trim())) {
+      vk.toast('请输入要发送的文字');
+      return;
+    }
+    state.busy = true;
+    activeCase.value = id;
+    hasResult.value = false;
+    hasError.value = false;
+    statusText.value = '请求中…';
+    resultText.value = '等待响应…';
+    const startedAt = Date.now();
+    const data = { message: message.value.trim() };
+    const url = id === 'defaultError' || id === 'customError' ? failureUrl : successUrl;
+    paramsText.value = JSON.stringify({ url, data }, null, 2);
+    const options = {
+      url,
+      data,
+      ...(id === 'mask' ? { title: '请求中...' } : { loading: { that: state, name: 'requestLoading' } }),
+    };
+    let responseHandled = false;
+    if (id !== 'await')
+      options.success = (res) => {
+        responseHandled = true;
+        showResult(res, false, startedAt);
+      };
+    if (id === 'customError' || id === 'mask')
+      options.fail = (err) => {
+        responseHandled = true;
+        showResult(err, true, startedAt);
+        if (id === 'mask') vk.alert(vk.pubfn.isNotNull(err.msg) ? err.msg : '请求失败，请稍后重试');
+      };
+    try {
+      const res = await vk.callFunction(options);
+      if (id === 'await') showResult(res, false, startedAt);
+    } catch (err) {
+      // 捕获 Promise 拒绝并记录结果，不影响未设置 fail 时的框架默认提示。
+      if (!hasResult.value) showResult(err, true, startedAt);
+    } finally {
+      // 客户端初始化同步抛错时不会触发请求完成回调，补充释放按钮状态。
+      if (state.requestLoading) vk.setLoading(false, { that: state, name: 'requestLoading' });
+      if (id === 'mask' && !responseHandled) vk.hideLoading('request');
+      state.busy = false;
+    }
+  };
+
+  const clearResult = () => {
+    if (state.busy) return;
+    hasResult.value = false;
+    hasError.value = false;
+    statusText.value = '尚未发送请求';
+    paramsText.value = '{}';
+    resultText.value = '点击上方按钮查看结果';
+  };
+</script>
+
+<style>
+  @import '../common/demo.css';
+</style>

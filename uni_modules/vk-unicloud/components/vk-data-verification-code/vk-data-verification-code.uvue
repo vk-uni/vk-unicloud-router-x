@@ -1,0 +1,367 @@
+<template>
+  <view class="vk-data-verification-code">
+    <view @click="sendSmsCode" :style="customStyle">
+      <slot :tips="tips" :sec-num="secNum">
+        <text :style="textStyle">{{ tips }}</text>
+      </slot>
+    </view>
+  </view>
+</template>
+
+<script setup lang="ts">
+  const localeObj = {
+    'zh-Hans': {
+      startText: '获取验证码',
+      changeText: 'X秒重新获取',
+      endText: '重新获取',
+      tryAgainInSeconds: '秒后再重试',
+      pleaseEnterTheCorrectMobileNumber: '请输入正确的手机号码',
+      sending: '发送中...',
+      verificationCodeSent: '验证码已发送',
+      triggerDayLevelFlowControl: '触发天级流控',
+      pleaseTryAgainTomorrow: '短信发送频繁，请明日再试！',
+      pleaseTryAgainIn1Hour: '短信发送频繁，请过1小时后再试！',
+      triggerMinuteLevelFlowControl: '触发分钟级流控',
+      pleaseTryAgainLater: '短信发送频繁，请稍后再试！',
+    },
+    'zh-Hant': {
+      startText: '獲取驗證碼',
+      changeText: 'X秒重新獲取',
+      endText: '重新獲取',
+      tryAgainInSeconds: '秒後再重試',
+      pleaseEnterTheCorrectMobileNumber: '請輸入正確的手機號碼',
+      sending: '發送中...',
+      verificationCodeSent: '驗證碼已發送',
+      triggerDayLevelFlowControl: '觸發天級流控',
+      pleaseTryAgainTomorrow: '短信發送頻繁，請明日再試！',
+      pleaseTryAgainIn1Hour: '短信發送頻繁，請過1小時後再試！',
+      triggerMinuteLevelFlowControl: '觸發分鐘級流控',
+      pleaseTryAgainLater: '短信發送頻繁，請稍後再試！',
+    },
+    en: {
+      startText: 'Get code',
+      changeText: 'X second reacquire',
+      endText: 'Reacquire',
+      tryAgainInSeconds: 'Try again in seconds',
+      pleaseEnterTheCorrectMobileNumber: 'Please enter the correct mobile number',
+      sending: 'Sending...',
+      verificationCodeSent: 'Verification code sent',
+      triggerDayLevelFlowControl: 'Trigger day level flow control',
+      pleaseTryAgainTomorrow: 'SMS sent frequently, please try again tomorrow!',
+      pleaseTryAgainIn1Hour: 'SMS sent frequently, please try again in 1 hour',
+      triggerMinuteLevelFlowControl: 'Trigger minute level flow control',
+      pleaseTryAgainLater: 'SMS sent frequently, please try again later',
+    },
+  };
+
+  /**
+   * verificationCode 验证码输入框（uni-app x 蒸汽模式）
+   * @property {String} mode 模式，mobile 手机验证码 custom 自定义验证码 默认 mobile
+   * @property {String} mobile 接收短信的手机号
+   * @property {String} type 短信类型，如 register、login、bind、unbind
+   * @property {Number String} seconds 倒计时所需的秒数（默认60）
+   * @property {Object String} customStyle 自定义样式
+   * @property {String} start-text 开始前的提示语，见官网说明（默认获取验证码）
+   * @property {String} change-text 倒计时期间的提示语，必须带有字母"x"，见官网说明（默认X秒重新获取）
+   * @property {String} end-text 倒计结束的提示语，见官网说明（默认重新获取）
+   * @property {Boolean} keep-running 是否在H5刷新或各端返回再进入时继续倒计时（默认false）
+   * @event {Function} change 倒计时期间，每秒触发一次
+   * @event {Function} start 开始倒计时触发
+   * @event {Function} end 结束倒计时触发
+   * @event {Function} send 自定义发送事件 当mode=custom时会有此事件
+   * @example <vk-data-verification-code seconds="60" :mobile="form1.mobile" type="register" custom-style="font-size: 28rpx;"></vk-data-verification-code>
+   */
+  defineOptions({
+    name: 'vk-data-verification-code',
+  });
+
+  const emit = defineEmits(['start', 'end', 'change', 'send', 'codeChange', 'error', 'success']);
+  const props = defineProps({
+    // 模式，mobile 手机验证码 custom 自定义验证码 默认 mobile
+    mode: {
+      type: String,
+      default: 'mobile',
+    },
+    // 接收短信的手机号
+    mobile: {
+      type: String,
+    },
+    // 短信类型，如 register、login、bind、unbind
+    type: {
+      type: String,
+      default: 'login',
+    },
+    customStyle: {
+      type: [String, Object],
+    },
+    // 倒计时总秒数
+    seconds: {
+      type: [String, Number],
+      default: 60,
+    },
+    // 尚未开始时提示
+    startText: {
+      type: String,
+      default: '',
+    },
+    // 正在倒计时中的提示
+    changeText: {
+      type: String,
+      default: '',
+    },
+    // 倒计时结束时的提示
+    endText: {
+      type: String,
+      default: '',
+    },
+    // 是否在H5刷新或各端返回再进入时继续倒计时
+    keepRunning: {
+      type: Boolean,
+      default: false,
+    },
+    // 为了区分多个页面，或者一个页面多个倒计时组件本地存储的继续倒计时变量
+    uniqueKey: {
+      type: String,
+      default: '',
+    },
+    // 是否需要检测手机号对应的账号是否存在，默认false：不检测 设置为true：会检测，如果检测到用户不存在，则不发短信。
+    checkUserExist: {
+      type: Boolean,
+      default: false,
+    },
+  });
+
+  const secNum = ref(props.seconds);
+  const canGetCode = ref(true); // 是否可以执行验证码操作
+  const tips = ref('');
+  const locale = ref(localeObj['zh-Hans']); // 语言
+  let timer = null;
+  let isDestroyed = false;
+
+  if (typeof uni.vk !== 'undefined') {
+    const currentLocale = uni.vk.pubfn.getLocale();
+    locale.value = localeObj[currentLocale] || localeObj.en;
+  }
+
+  const startTextCom = computed(() => props.startText || locale.value.startText || '获取验证码');
+  const changeTextCom = computed(() => props.changeText || locale.value.changeText || 'X秒重新获取');
+  const endTextCom = computed(() => props.endText || locale.value.endText || '重新获取');
+
+  // App 端文字不继承 view 的样式，仅将文字样式同步到 text，避免重复应用边距、背景等容器样式。
+  function isTextStyle(name) {
+    const property = name.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase());
+    return /^(color|font(?:-.+)?|line-height|letter-spacing|word-spacing|text-.+|white-space|word-break|overflow-wrap|direction)$/.test(property);
+  }
+
+  const textStyle = computed(() => {
+    const customStyle = props.customStyle;
+    if (typeof customStyle === 'string') {
+      return customStyle
+        .split(';')
+        .filter((item) => isTextStyle(item.split(':')[0].trim()))
+        .join(';');
+    }
+    const style = {};
+    Object.keys(customStyle ?? {}).forEach((name) => {
+      if (isTextStyle(name)) {
+        style[name] = customStyle[name];
+      }
+    });
+    return style;
+  });
+
+  watch(
+    () => props.seconds,
+    (seconds) => {
+      secNum.value = seconds;
+    },
+    { immediate: true }
+  );
+
+  // 倒计时进行时
+  function codeChange(text) {
+    tips.value = text;
+    emit('codeChange', text);
+  }
+
+  function changeEvent(text) {
+    codeChange(text);
+    emit('change', text);
+  }
+
+  // 清除倒计时缓存，失败时仍继续更新组件状态
+  function removeTimeFromStorage() {
+    if (!props.keepRunning) return;
+    try {
+      uni.removeStorageSync(props.uniqueKey + '_$uCountDownTimestamp');
+    } catch (err) {
+      // 缓存删除失败不应中断倒计时恢复、结束或重置
+    }
+  }
+
+  // 保存时间戳，为了防止倒计时尚未结束，H5刷新或者各端的右上角返回上一页再进来
+  function setTimeToStorage() {
+    if (!props.keepRunning || !timer) return;
+    // 记录当前的时间戳，为了下次进入页面，如果还在倒计时内的话，继续倒计时
+    // 倒计时尚未结束，剩余秒数大于0，刚开始时等于初始值
+    if (secNum.value > 0 && secNum.value <= props.seconds) {
+      const nowTimestamp = Math.floor(+new Date() / 1000);
+      // 将本该结束时候的时间戳保存起来 => 当前时间戳 + 剩余的秒数
+      try {
+        uni.setStorageSync(props.uniqueKey + '_$uCountDownTimestamp', nowTimestamp + Number(secNum.value));
+      } catch (err) {
+        // 缓存写入失败不应中断成功事件和定时器清理
+      }
+    }
+  }
+
+  // 开始倒计时
+  function start() {
+    // 防止快速点击获取验证码的按钮而导致内部产生多个定时器导致混乱
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+    emit('start');
+    canGetCode.value = false;
+    // 这里放这句，是为了一开始时就提示，否则要等setInterval的1秒后才会有提示
+    changeEvent(changeTextCom.value.replace(/x|X/, secNum.value));
+    timer = setInterval(() => {
+      if (--secNum.value > 0) {
+        // 用当前倒计时的秒数替换提示字符串中的"x"字母
+        changeEvent(changeTextCom.value.replace(/x|X/, secNum.value));
+      } else {
+        clearInterval(timer);
+        timer = null;
+        removeTimeFromStorage();
+        changeEvent(endTextCom.value);
+        secNum.value = props.seconds;
+        emit('end');
+        canGetCode.value = true;
+      }
+    }, 1000);
+    setTimeToStorage();
+  }
+
+  // 重置，可以让用户再次获取验证码
+  function reset(text) {
+    canGetCode.value = true;
+    clearInterval(timer);
+    timer = null;
+    removeTimeFromStorage();
+    secNum.value = props.seconds;
+    changeEvent(text || endTextCom.value);
+  }
+
+  function checkKeepRunning() {
+    // 获取上一次退出页面(H5还包括刷新)时的时间戳，如果没有上次的保存，此值可能为空
+    const lastTimestamp = Number(uni.getStorageSync(props.uniqueKey + '_$uCountDownTimestamp'));
+    if (!lastTimestamp) return changeEvent(startTextCom.value);
+    // 当前秒的时间戳
+    const nowTimestamp = Math.floor(+new Date() / 1000);
+    // 判断当前的时间戳，是否小于上一次的本该按设定结束，却提前结束的时间戳
+    if (props.keepRunning && lastTimestamp && lastTimestamp > nowTimestamp) {
+      // 剩余尚未执行完的倒计秒数
+      secNum.value = lastTimestamp - nowTimestamp;
+      // 清除本地保存的变量
+      removeTimeFromStorage();
+      // 开始倒计时
+      start();
+    } else {
+      // 如果不存在需要继续上一次的倒计时，执行正常的逻辑
+      changeEvent(startTextCom.value);
+    }
+  }
+
+  // 发送短信验证码
+  function sendSmsCode() {
+    const vk = uni.vk;
+    const { mobile, type, checkUserExist, mode } = props;
+    if (!canGetCode.value) {
+      vk.toast(`${secNum.value}${locale.value.tryAgainInSeconds}`, 'none');
+      return;
+    }
+    if (mode === 'custom') {
+      emit('send', { type: type });
+      return;
+    }
+
+    if (!vk.pubfn.test(mobile, 'mobile')) {
+      vk.toast(locale.value.pleaseEnterTheCorrectMobileNumber, 'none');
+      return;
+    }
+    tips.value = locale.value.sending;
+    vk.userCenter.sendSmsCode({
+      needAlert: false,
+      data: {
+        mobile,
+        type,
+        checkUserExist,
+      },
+      success: (data) => {
+        if (isDestroyed) return;
+        vk.toast(locale.value.verificationCodeSent);
+        start();
+        emit('success', data);
+      },
+      fail: (err) => {
+        if (isDestroyed) return;
+        tips.value = startTextCom.value;
+        if (err.errMsg && err.errMsg.indexOf('触发天级流控') > -1) {
+          vk.alert(locale.value.pleaseTryAgainTomorrow, () => {
+            emit('error', err);
+          });
+        } else if (err.errMsg && err.errMsg.indexOf('触发小时级流控') > -1) {
+          vk.alert(locale.value.pleaseTryAgainIn1Hour, () => {
+            emit('error', err);
+          });
+        } else if (err.errMsg && err.errMsg.indexOf('触发分钟级流控') > -1) {
+          vk.alert(locale.value.pleaseTryAgainLater, () => {
+            emit('error', err);
+          });
+        } else if (err.msg) {
+          vk.alert(err.msg, () => {
+            emit('error', err);
+          });
+        } else {
+          vk.alert(locale.value.pleaseTryAgainLater, () => {
+            emit('error', err);
+          });
+        }
+      },
+    });
+  }
+
+  onMounted(() => {
+    checkKeepRunning();
+  });
+
+  // 组件销毁的时候，清除定时器，否则定时器会继续存在，系统不会自动清除
+  onBeforeUnmount(() => {
+    isDestroyed = true;
+    setTimeToStorage();
+    clearInterval(timer);
+    timer = null;
+  });
+
+  // 保留父组件通过 ref 操作倒计时和读取状态的用法。
+  defineExpose({
+    start,
+    reset,
+    sendSmsCode,
+    checkKeepRunning,
+    changeEvent,
+    codeChange,
+    removeTimeFromStorage,
+    setTimeToStorage,
+    canGetCode,
+    secNum,
+    tips,
+    locale,
+    startTextCom,
+    changeTextCom,
+    endTextCom,
+  });
+</script>
+
+<style lang="scss" scoped></style>

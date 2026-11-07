@@ -1,0 +1,200 @@
+<template>
+  <view class="auth-page">
+    <scroll-view class="auth-scroll" direction="vertical" :show-scrollbar="false">
+      <view class="auth-content" :style="contentStyle">
+        <view class="auth-header">
+          <image class="auth-logo" src="@/static/logo.png" mode="aspectFit" />
+          <view class="auth-heading">
+            <text class="auth-title">找回密码</text>
+            <text class="auth-subtitle">验证手机号后重置密码</text>
+          </view>
+        </view>
+
+        <view class="auth-form">
+          <view class="auth-field">
+            <text class="auth-label">手机号</text>
+            <view class="auth-input-row">
+              <text class="auth-country-code">+86</text>
+              <view class="auth-input-divider"></view>
+              <input
+                v-model="form.mobile"
+                class="auth-input"
+                type="number"
+                :maxlength="11"
+                :disabled="requestState.submitting"
+                placeholder="请输入手机号"
+                placeholder-class="auth-placeholder"
+              />
+            </view>
+          </view>
+          <view class="auth-field">
+            <text class="auth-label">验证码</text>
+            <view class="auth-input-row">
+              <input
+                v-model="form.code"
+                class="auth-input"
+                type="number"
+                :maxlength="6"
+                :disabled="requestState.submitting"
+                placeholder="请输入验证码"
+                placeholder-class="auth-placeholder"
+              />
+              <view class="auth-code">
+                <view v-show="!requestState.submitting">
+                  <vk-data-verification-code
+                    :seconds="60"
+                    :mobile="form.mobile.trim()"
+                    type="reset-pwd"
+                    :check-user-exist="true"
+                    :keep-running="true"
+                    unique-key="vk-client-x-reset-password"
+                    change-text="X秒后重试"
+                    custom-style="font-size: 13px; color: var(--main-color, #111111); background-color: #f4f4f4; border-radius: 18px; padding: 5px 12px;"
+                  ></vk-data-verification-code>
+                </view>
+                <text v-if="requestState.submitting" class="auth-code-disabled">获取验证码</text>
+              </view>
+            </view>
+          </view>
+          <view class="auth-field">
+            <text class="auth-label">新密码</text>
+            <view class="auth-input-row">
+              <input
+                v-model="form.password"
+                class="auth-input"
+                :password="!showPassword"
+                :maxlength="18"
+                :disabled="requestState.submitting"
+                placeholder="请设置新密码"
+                placeholder-class="auth-placeholder"
+              />
+              <view
+                class="auth-icon-button"
+                :hover-class="requestState.submitting ? 'none' : 'auth-button-hover'"
+                @click="!requestState.submitting && (showPassword = !showPassword)"
+              >
+                <auth-icon :name="showPassword ? 'eye-off' : 'eye'" :size="22" />
+              </view>
+            </view>
+          </view>
+          <view class="auth-field auth-field-last">
+            <text class="auth-label">确认新密码</text>
+            <view class="auth-input-row">
+              <input
+                v-model="form.password2"
+                class="auth-input"
+                :password="!showPassword2"
+                :maxlength="18"
+                :disabled="requestState.submitting"
+                confirm-type="done"
+                placeholder="请再次输入新密码"
+                placeholder-class="auth-placeholder"
+                @confirm="resetPassword"
+              />
+              <view
+                class="auth-icon-button"
+                :hover-class="requestState.submitting ? 'none' : 'auth-button-hover'"
+                @click="!requestState.submitting && (showPassword2 = !showPassword2)"
+              >
+                <auth-icon :name="showPassword2 ? 'eye-off' : 'eye'" :size="22" />
+              </view>
+            </view>
+          </view>
+          <view class="auth-actions">
+            <text v-if="errorMessage.length > 0" class="auth-error">{{ errorMessage }}</text>
+            <button
+              class="auth-submit"
+              :class="{ 'auth-button-disabled': requestState.submitting }"
+              type="primary"
+              :hover-class="requestState.submitting ? 'none' : 'auth-button-hover'"
+              :loading="requestState.submitting"
+              @click="resetPassword"
+            >
+              重置密码
+            </button>
+          </view>
+        </view>
+
+        <view class="auth-footer">
+          <text class="auth-link" @click="backToLogin">返回登录</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup>
+  import { reactive, ref } from 'vue';
+  // 引入 vk 对象
+  import vk from '@/uni_modules/vk-unicloud';
+  // 引入验证码组件
+  import VkDataVerificationCode from '@/uni_modules/vk-unicloud/components/vk-data-verification-code/vk-data-verification-code.uvue';
+  import AuthIcon from '../components/auth-icon.uvue';
+  import { captureLoginOptions, getLoginQuery, getRequestMessage, validateMobilePassword, useAuthLayout } from '../utils.js';
+
+  // 页面数据
+  const form = reactive({ mobile: '', code: '', password: '', password2: '' });
+  const requestState = reactive({ submitting: false });
+  const errorMessage = ref('');
+  const showPassword = ref(false);
+  const showPassword2 = ref(false);
+  const { contentStyle } = useAuthLayout();
+  let pageOptions = {};
+  let disposed = false;
+
+  // 重置密码
+  async function resetPassword() {
+    if (requestState.submitting || !validateMobilePassword(form)) return;
+    errorMessage.value = '';
+    requestState.submitting = true;
+    try {
+      const res = await vk.userCenter.resetPasswordByMobile({
+        loading: { that: requestState, name: 'submitting' },
+        data: {
+          mobile: form.mobile.trim(),
+          code: form.code.trim(),
+          password: form.password,
+        },
+      });
+      // 离开页面后，不再处理成功提示和跳转。
+      if (disposed || vk.pubfn.isNull(res)) return;
+      form.password = '';
+      form.password2 = '';
+      form.code = '';
+      vk.alert('密码已重置，请使用新密码登录', () => {
+        backToLogin();
+      });
+    } catch (error) {
+      errorMessage.value = getRequestMessage(error, '密码重置失败，请稍后重试');
+    } finally {
+      requestState.submitting = false;
+    }
+  }
+
+  // 优先返回已有登录页，避免重复入栈。
+  function backToLogin() {
+    if (disposed || requestState.submitting) return;
+    const pages = getCurrentPages();
+    const previousPage = pages[pages.length - 2];
+    if (previousPage?.route === 'pages/login/index/index') {
+      vk.navigateBack();
+    } else {
+      vk.redirectTo('/pages/login/index/index' + getLoginQuery(pageOptions));
+    }
+  }
+
+  // 监听 - 页面每次【加载时】执行(如：前进)
+  onLoad((options) => {
+    // 保留登录后的回跳目标。
+    pageOptions = captureLoginOptions(options);
+  });
+
+  // 监听 - 页面每次【卸载时】（一般用于取消页面上的监听器）
+  onUnload(() => {
+    disposed = true;
+  });
+</script>
+
+<style>
+  @import '../css/main.css';
+</style>

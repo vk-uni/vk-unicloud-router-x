@@ -1,0 +1,103 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "首页"
+      }
+    }
+  ],
+  "subPackages": [
+    {
+      "root": "pages/error",
+      "pages": [
+        {
+          "path": "404",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTextStyle": "black",
+            "navigationBarTitleText": "404"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/login",
+      "pages": [
+        {
+          "path": "index/index",
+          "style": {
+            "navigationStyle": "default",
+            "disableScroll": true,
+            "navigationBarBackgroundColor": "#ffffff",
+            "navigationBarTitleText": "登录"
+          }
+        },
+        {
+          "path": "register/register",
+          "style": {
+            "navigationStyle": "default",
+            "disableScroll": true,
+            "navigationBarBackgroundColor": "#ffffff",
+            "navigationBarTitleText": "注册账号"
+          }
+        },
+        {
+          "path": "forget/forget",
+          "style": {
+            "navigationStyle": "default",
+            "disableScroll": true,
+            "navigationBarBackgroundColor": "#ffffff",
+            "navigationBarTitleText": "找回密码"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/closeAccount",
+      "pages": [
+        {
+          "path": "closeAccount",
+          "style": {
+            "navigationBarTitleText": "账号注销与恢复"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages_template",
+      "pages": [
+        {
+          "path": "index/index",
+          "style": {
+            "navigationBarTitleText": "框架演示"
+          }
+        },
+        {
+          "path": "request/request",
+          "style": {
+            "navigationBarTitleText": "请求调用"
+          }
+        },
+        {
+          "path": "pinia/pinia",
+          "style": {
+            "navigationBarTitleText": "Pinia 状态管理"
+          }
+        },
+        {
+          "path": "pinia/sync",
+          "style": {
+            "navigationBarTitleText": "跨页状态同步"
+          }
+        }
+      ]
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#ffffff"
+  }
+}

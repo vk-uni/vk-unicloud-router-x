@@ -1,0 +1,29 @@
+page {
+  --main-color: #111111;
+  background-color: #ffffff;
+}
+
+/* #ifdef WEB */
+.uni-mask,
+.uni-modal,
+uni-toast,
+uni-modal,
+.uni-actionsheet {
+  z-index: 999999 !important;
+}
+/* 禁用双击缩放，直接触发点击，解决Web端点击响应延迟的问题 */
+a,
+button,
+view,
+text {
+  touch-action: manipulation;
+}
+/* #endif */
+
+.uni-row {
+  flex-direction: row;
+}
+
+.uni-column {
+  flex-direction: column;
+}

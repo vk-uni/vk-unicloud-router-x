@@ -1,0 +1,24 @@
+{
+  "id": "vk-cloud-router-x",
+  "name": "vk-cloud-router-x",
+  "displayName": "【开箱即用】vk-unicloud 全栈开发框架 uni-app x 蒸汽模式版本 - 一个函数搞定整套系统",
+  "version": "1.0.0",
+  "description": "vk-unicloud 全栈开发框架的 uni-app x 蒸汽模式版本，集成常用业务 API，简化数据库操作，助你快速构建云开发应用",
+  "main": "main.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/vk-uni/vk-unicloud-router-x.git"
+  },
+  "keywords": [
+    "vk-cloud-router-x",
+    "uni-app x蒸汽模式",
+    "vk云开发",
+    "一个函数搞定整套系统",
+    "企业级云开发框架"
+  ],
+  "author": "VK",
+  "license": "MIT"
+}

@@ -1,0 +1,158 @@
+<template>
+  <view class="demo-page">
+    <scroll-view class="demo-scroll" direction="vertical">
+      <view class="demo-content">
+        <text class="demo-eyebrow">VK UNICLOUD / EXAMPLES</text>
+        <view class="example-intro">
+          <image class="example-logo" src="@/static/logo.png" mode="aspectFit" />
+          <view class="example-intro-copy">
+            <text class="demo-title example-intro-title">从一个示例开始</text>
+            <text class="demo-description example-intro-description">体验框架的常用能力</text>
+          </view>
+        </view>
+        <view class="demo-card">
+          <text class="demo-card-title">{{ isLogin ? displayName : '还未登录' }}</text>
+          <text class="demo-body">{{ isLogin ? '可以体验账号注销与恢复，也可以退出后重新登录。' : '已内置账号体系，无需重复造轮子' }}</text>
+          <button v-if="!isLogin" class="demo-button" hover-class="demo-button-hover" @click="openLogin">登录 / 注册</button>
+          <button
+            v-else
+            class="demo-button demo-button-secondary"
+            :class="{ 'demo-button-disabled': state.loggingOut }"
+            :hover-class="state.loggingOut ? 'none' : 'demo-button-hover'"
+            :loading="state.loggingOut"
+            @click="logout"
+          >
+            退出登录
+          </button>
+        </view>
+        <view v-for="item in examples" :key="item.path" class="demo-card">
+          <view class="example-heading">
+            <text class="example-number">{{ item.number }}</text>
+            <text class="example-title">{{ item.title }}</text>
+          </view>
+          <text class="demo-body">{{ item.description }}</text>
+          <text class="demo-label">{{ item.apis }}</text>
+          <button class="demo-button demo-button-secondary" hover-class="demo-button-hover" @click="openExample(item.path)">进入示例</button>
+        </view>
+        <text class="demo-footer">演示页面源代码位于 pages_template，可删除，登录和注销页面位于 pages，可独立复用。</text>
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup>
+  import { computed, reactive, ref } from 'vue';
+  import vk from '@/uni_modules/vk-unicloud';
+
+  const state = reactive({ loggingOut: false });
+  const isLogin = ref(false);
+  const userInfo = computed(() => vk.getVuex('$user.userInfo', {}));
+  const displayName = computed(() => {
+    if (vk.pubfn.isNotNull(userInfo.value.nickname)) return userInfo.value.nickname;
+    if (vk.pubfn.isNotNull(userInfo.value.username)) return userInfo.value.username;
+    return '已登录';
+  });
+  const examples = [
+    {
+      number: '01',
+      title: '请求调用',
+      description: '发送参数、切换加载方式，比较默认错误提示与自定义处理。',
+      apis: 'vk.callFunction · callback · async / await',
+      path: '/pages_template/request/request',
+    },
+    {
+      number: '02',
+      title: '登录与账号',
+      description: '体验账号密码登录、短信注册、找回密码和微信登录。',
+      apis: 'vk.userCenter · 登录后返回原页面',
+      path: '/pages/login/index/index',
+    },
+    {
+      number: '03',
+      title: '注销与恢复',
+      description: '查看账号状态，申请注销，在最终确认前恢复账号。',
+      apis: '账号状态 · 冷静期 · 恢复账号',
+      path: '/pages/closeAccount/closeAccount',
+    },
+    {
+      number: '04',
+      title: 'Pinia 状态管理',
+      description: '用原生 Pinia 和 vk API 修改同一份数据，验证跨页同步和持久化。',
+      apis: 'Pinia · vk.getVuex · vk.setVuex',
+      path: '/pages_template/pinia/pinia',
+    },
+  ];
+
+  onShow(() => {
+    isLogin.value = vk.checkToken();
+  });
+  const openLogin = () => vk.navigateToLogin({ mode: 'navigateTo' });
+  const openExample = (path) => vk.navigateTo(path);
+  const logout = async () => {
+    if (state.loggingOut) return;
+    try {
+      await vk.userCenter.logout({
+        loading: { that: state, name: 'loggingOut' },
+        success: () => {
+          // 防抖可能跳过调用，仅在真实成功回调中更新登录状态。
+          isLogin.value = false;
+          vk.toast('已退出登录');
+        },
+      });
+    } catch (err) {
+      // 错误由框架统一提示；保持当前登录状态，允许用户重试。
+      isLogin.value = vk.checkToken();
+    } finally {
+      if (state.loggingOut) vk.setLoading(false, { that: state, name: 'loggingOut' });
+    }
+  };
+</script>
+
+<style>
+  @import '../common/demo.css';
+  .example-intro {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .example-logo {
+    width: 56px;
+    height: 56px;
+    margin-right: 16px;
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+  .example-intro-copy {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+  .example-intro-title {
+    line-height: 40px;
+    margin-bottom: 6px;
+  }
+  .example-intro-description {
+    margin-bottom: 0;
+  }
+  .example-heading {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .example-number {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--main-color);
+    background-color: #f4f4f4;
+    padding: 6px 8px;
+    border-radius: 8px;
+    margin-right: 12px;
+  }
+  .example-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--main-color);
+  }
+</style>

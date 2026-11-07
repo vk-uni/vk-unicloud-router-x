@@ -1,0 +1,96 @@
+<script setup>
+  import config from '@/app.config.js';
+  import vk from '@/uni_modules/vk-unicloud';
+  // #ifndef APP
+  import { version } from './package.json';
+  // #endif
+
+  // #ifdef APP-ANDROID || APP-HARMONY
+  let firstBackTime = 0;
+  // #endif
+
+  // App 端不支持 onPageNotFound；vk 路由跳转失败时由框架处理 404。
+  // #ifndef APP
+  onPageNotFound(() => {
+    uni.redirectTo({
+      url: config.error.url,
+    });
+  });
+  // #endif
+
+  onLaunch((options) => {
+    // 接收页面 token 参数，用于实现自动登录。
+    vk.handleAutoLoginToken(options);
+
+    if (config.debug) {
+      // #ifndef APP
+      console.log(
+        `%c vk-client-x %c v${version} `,
+        'background:#35495e ; padding: 1px; border-radius: 3px 0 0 3px; color: #fff',
+        'background:#007aff ; padding: 1px; border-radius: 0 3px 3px 0; color: #fff; font-weight: bold;'
+      );
+      // #endif
+      console.log('App Launch');
+    }
+
+    // #ifdef MP
+    // 自动检查小程序更新，开发和正式环境均执行。
+    vk.updateManager.updateReady();
+    // #endif
+
+    // 如需统计每日登录，可按需开启：使用有效 token 登录、刷新 token 并增加登录日志。
+    // 同一天重复调用时，仅第一次计入每日登录统计。
+    // vk.userCenter.loginByToken();
+  });
+
+  onAppShow(() => {
+    if (config.debug) console.log('App Show');
+    // #ifdef MP-WEIXIN
+    // 提醒使用“发行”构建体验版，避免将开发模式代码作为体验版发布。
+    try {
+      const nodeEnv = process.env.NODE_ENV;
+      if (config.debug) console.log('当前运行模式: ', nodeEnv);
+      const info = uni.getAccountInfoSync();
+      if (info.miniProgram.envVersion === 'trial' && nodeEnv !== 'production') {
+        vk.alert(
+          '检测到您当前发布的【体验版】是通过【运行】按钮打包发布的，请重新点击HBX上方菜单的【发行】按钮进行打包发布小程序（如果确定是【发行】按钮打包的，请删除手机上的体验版小程序并重新扫码进入）',
+          '重要提示',
+          '好的'
+        );
+      }
+    } catch (err) {}
+    // #endif
+  });
+
+  onAppHide(() => {
+    if (config.debug) console.log('App Hide');
+  });
+
+  // #ifdef APP-ANDROID || APP-HARMONY
+  onLastPageBackPress(() => {
+    if (config.debug) console.log('App LastPageBackPress');
+    if (firstBackTime === 0) {
+      uni.showToast({
+        title: '再按一次退出应用',
+        position: 'bottom',
+      });
+      firstBackTime = Date.now();
+      setTimeout(() => {
+        firstBackTime = 0;
+      }, 2000);
+    } else if (Date.now() - firstBackTime < 2000) {
+      firstBackTime = Date.now();
+      uni.exit();
+    }
+  });
+
+  onExit(() => {
+    if (config.debug) console.log('App Exit');
+  });
+  // #endif
+</script>
+
+<style>
+  /* 每个页面公共 css */
+  @import './common/css/app.css';
+</style>

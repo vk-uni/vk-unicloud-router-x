@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Vim
+*.swp
+
+# Dependencies
+node_modules/
+
+# Build output
+unpackage/
+
+# Tool caches
+.vite/
+.eslintcache
+
+# Editor settings
+.vscode/
+.hbuilderx/
+
+# AI agents
+**/common/scripts/
+**/rules/env.md
+**/rules/vk-*
+**/skills/vk-*
+**/settings.json
+**/settings.local.json
+AGENTS.md
+CLAUDE.md

@@ -1,0 +1,29 @@
+<template>
+  <text class="auth-icon" :style="{ width: size + 'px', height: size + 'px', fontSize: size + 'px', lineHeight: size + 'px', color }">{{ glyph }}</text>
+</template>
+
+<script setup>
+  import { computed } from 'vue';
+
+  const props = defineProps({
+    name: { type: String, default: 'back' },
+    size: { type: Number, default: 24 },
+    color: { type: String, default: '#111111' },
+  });
+  const icons = { brand: '\ue001', back: '\ue002', eye: '\ue003', 'eye-off': '\ue004', wechat: '\ue005', circle: '\ue006', 'check-circle': '\ue007' };
+  const glyph = computed(() => icons[props.name] ?? icons.back);
+</script>
+
+<style>
+  @font-face {
+    font-family: VkAuthIconsV2;
+    src: url('@/pages/login/static/fonts/vk-auth-icons-v2.ttf');
+  }
+  .auth-icon {
+    font-family: VkAuthIconsV2;
+    font-weight: normal;
+    font-style: normal;
+    flex-shrink: 0;
+    text-align: center;
+  }
+</style>

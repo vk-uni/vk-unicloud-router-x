@@ -1,0 +1,155 @@
+.demo-page {
+  flex: 1;
+  height: 100%;
+  background-color: #ffffff;
+}
+.demo-scroll {
+  flex: 1;
+}
+.demo-content {
+  padding: 24px 20px 40px;
+}
+.demo-eyebrow {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--main-color);
+  margin-bottom: 10px;
+}
+.demo-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--main-color);
+  margin-bottom: 12px;
+}
+.demo-description {
+  font-size: 14px;
+  line-height: 23px;
+  color: #858585;
+  margin-bottom: 24px;
+}
+.demo-card {
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  background-color: #f7f7f7;
+}
+.demo-card-title {
+  font-size: 17px;
+  font-weight: bold;
+  color: var(--main-color);
+  margin-bottom: 10px;
+}
+.demo-body {
+  font-size: 14px;
+  line-height: 22px;
+  color: #858585;
+}
+.demo-label {
+  font-size: 12px;
+  line-height: 20px;
+  color: #858585;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+.demo-button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0 0;
+  border-radius: 10px;
+  /* 保留自定义颜色，避免平台 loading / disabled 默认样式覆盖。 */
+  background-color: var(--main-color) !important;
+  color: #ffffff !important;
+  font-size: 14px;
+}
+.demo-button-secondary {
+  /* 描边区分可点击按钮和浅色卡片，颜色随全局主色变化。 */
+  background-color: #ffffff !important;
+  color: var(--main-color) !important;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--main-color) !important;
+}
+.demo-button-hover {
+  opacity: 0.85;
+}
+.demo-button-disabled {
+  /* 基于主题色淡化，禁用时保留原有色相。 */
+  opacity: 0.55;
+}
+.demo-input {
+  height: 46px;
+  padding: 0 12px;
+  border-radius: 10px;
+  box-sizing: border-box;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #e5e5e5;
+  background-color: #ffffff;
+  font-size: 14px;
+  color: var(--main-color);
+}
+.demo-placeholder {
+  color: #767676;
+}
+.demo-code-box {
+  padding: 14px;
+  border-radius: 10px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #e5e5e5;
+  background-color: #ffffff;
+}
+.demo-code {
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--main-color);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.demo-status {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--main-color);
+}
+.demo-status-error {
+  color: #c43838;
+}
+.demo-footer {
+  color: #858585;
+  font-size: 12px;
+  line-height: 20px;
+  margin-top: 8px;
+}
+/* #ifdef WEB */
+.demo-content {
+  max-width: 760px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.demo-button::after {
+  border-width: 0;
+}
+.demo-button[loading]::before {
+  width: 16px;
+  height: 16px;
+  margin: 0 8px 0 0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  /* 使用当前文字颜色，主按钮和次按钮均可适配。 */
+  background-image: none !important;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: demo-button-loading 0.8s linear infinite;
+}
+@keyframes demo-button-loading {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* #endif */

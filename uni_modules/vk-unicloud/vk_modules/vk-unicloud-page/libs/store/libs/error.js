@@ -1,0 +1,26 @@
+const install = (Vue) => {
+  const debug = process.env.NODE_ENV !== 'production';
+  let vk = uni.vk;
+  if (debug && vk) {
+    const oldErrorHandler = Vue.config.errorHandler;
+    Vue.config.errorHandler = function errorHandler(err, vm, info) {
+      const route = vm && vm.$page && vm.$page.route;
+      let date = new Date();
+      let log = {
+        err: String(err),
+        info,
+        route,
+        time: date.getTime(),
+        timeStr: date.toLocaleTimeString(),
+      };
+      if (vk.vuex) vk.vuex.dispatch('$error/add', log);
+      if (typeof oldErrorHandler === 'function') {
+        return oldErrorHandler(err, vm, info);
+      }
+    };
+  }
+};
+
+export default {
+  install,
+};

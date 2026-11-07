@@ -1,0 +1,92 @@
+<template>
+  <view class="pinia-page">
+    <scroll-view class="pinia-scroll" direction="vertical">
+      <view class="demo-content">
+        <view class="demo-hero">
+          <text class="eyebrow">STATE / SHARED</text>
+          <text class="hero-title">换一页，还是同一份</text>
+          <text class="hero-description">这里重新获取 $demo store，没有通过路由传递状态，也没有复制上一页的数据。</text>
+        </view>
+
+        <view class="demo-card">
+          <text class="section-number">共享计数</text>
+          <view class="comparison-row">
+            <view class="comparison-box comparison-first">
+              <text class="small-label">原生 Pinia</text>
+              <text class="comparison-value">{{ demoStore.count }}</text>
+            </view>
+            <view class="comparison-box">
+              <text class="small-label">vk.getVuex</text>
+              <text class="comparison-value">{{ vkCount }}</text>
+            </view>
+          </view>
+          <text class="body-text">计算属性：{{ demoStore.doubleCount }}（计数 × 2）</text>
+          <view class="button-row">
+            <button class="demo-button primary button-first" @click="demoStore.increment(5)">Pinia action +5</button>
+            <button class="demo-button secondary" @click="incrementWithVk">vk.setVuex +5</button>
+          </view>
+        </view>
+
+        <view class="demo-card">
+          <text class="section-number">共享资料</text>
+          <text class="section-title">在这里修改昵称</text>
+          <text class="body-text">当前昵称：{{ demoStore.profile.nickname }}</text>
+          <input placeholder-class="demo-placeholder" class="demo-input" v-model="nickname" :maxlength="20" placeholder="输入新的演示昵称" />
+          <button class="demo-button primary block-button" @click="saveNickname">通过 vk.setVuex 保存</button>
+          <text class="muted-text">共享清单：{{ demoStore.completedCount }} / {{ demoStore.items.length }} 项已完成</text>
+          <text class="code-block" selectable>{{ syncExample }}</text>
+        </view>
+
+        <view class="demo-card">
+          <text class="section-number">验证同步</text>
+          <text class="section-title">返回上一页看看</text>
+          <text class="body-text">返回后，计数、昵称和计算属性会立即展示最新值。刷新或重启后，现有持久化机制会继续恢复这些值。</text>
+          <button class="demo-button primary block-button" @click="backToDemo">返回 Pinia 演示</button>
+          <text class="hint">这两个页面使用同一个 $demo store，演示数据与账号信息相互独立。</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup>
+  import { computed, ref } from 'vue';
+  import vk from '@/uni_modules/vk-unicloud';
+  import { useDemoStore } from '@/store/modules/$demo.js';
+
+  const demoStore = useDemoStore();
+  const vkCount = computed(() => vk.getVuex('$demo.count', 0));
+  const nickname = ref(demoStore.profile.nickname);
+  const syncExample = "const demoStore = useDemoStore();\nconst count = computed(() => vk.getVuex('$demo.count'));\nvk.setVuex('$demo.profile.nickname', nickname);";
+
+  onShow(() => {
+    nickname.value = demoStore.profile.nickname;
+  });
+
+  function incrementWithVk() {
+    vk.setVuex('$demo.count', vk.getVuex('$demo.count') + 5);
+  }
+
+  function saveNickname() {
+    const value = nickname.value.trim();
+    if (vk.pubfn.isNull(value)) {
+      vk.toast('请输入演示昵称');
+      return;
+    }
+    vk.setVuex('$demo.profile.nickname', value);
+    vk.toast('已同步到共享状态');
+  }
+
+  function backToDemo() {
+    const pages = getCurrentPages();
+    if (pages.length > 1) {
+      vk.navigateBack();
+    } else {
+      vk.redirectTo('/pages_template/pinia/pinia');
+    }
+  }
+</script>
+
+<style>
+  @import './pinia.css';
+</style>

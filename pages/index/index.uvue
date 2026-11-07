@@ -1,0 +1,61 @@
+<template>
+  <view class="home-page">
+    <image class="logo" src="@/static/logo.png" mode="aspectFit"></image>
+    <text class="title">vk-unicloud</text>
+    <text class="description">uni-app x 蒸汽模式 · 全栈开发框架</text>
+    <button class="entry-button" hover-class="entry-button-hover" @click="openDemo">查看框架演示</button>
+    <text class="caption">云函数 · uni-id · Pinia 状态管理</text>
+  </view>
+</template>
+
+<script setup>
+  import vk from '@/uni_modules/vk-unicloud';
+
+  const openDemo = () => vk.navigateTo('/pages_template/index/index');
+</script>
+
+<style>
+  .home-page {
+    flex: 1;
+    align-items: center;
+    padding: 64px 24px 32px;
+    background-color: #ffffff;
+  }
+  .logo {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 28px;
+    border-radius: 10px;
+  }
+  .title {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--main-color);
+    text-align: center;
+  }
+  .description {
+    font-size: 15px;
+    color: #858585;
+    margin-top: 12px;
+    text-align: center;
+  }
+  .entry-button {
+    width: 100%;
+    max-width: 320px;
+    margin-top: 42px;
+    border-radius: 12px;
+    background-color: var(--main-color) !important;
+    color: #ffffff !important;
+    font-size: 16px;
+  }
+  .caption {
+    font-size: 12px;
+    line-height: 20px;
+    color: #858585;
+    margin-top: 20px;
+    text-align: center;
+  }
+  .entry-button-hover {
+    opacity: 0.75;
+  }
+</style>

@@ -1,0 +1,110 @@
+<template>
+  <view class="error-page" :style="{ minHeight: windowHeight + 'px' }">
+    <view class="error-content">
+      <text class="status-code">404</text>
+      <text class="title">页面走丢了...</text>
+      <text class="desc">你访问的页面不存在或已被移除</text>
+      <image class="empty-image" src="./static/404.png" mode="aspectFit"></image>
+      <button class="home-btn" hover-class="home-btn-hover" @click="backHome">返回首页</button>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  import vk from '@/uni_modules/vk-unicloud';
+
+  const windowHeight = ref(uni.getWindowInfo().windowHeight);
+
+  onReady(() => {
+    windowHeight.value = uni.getWindowInfo().windowHeight;
+  });
+
+  onResize((options) => {
+    windowHeight.value = options.size.windowHeight;
+  });
+
+  const backHome = () => {
+    vk.navigateToHome();
+  };
+</script>
+
+<style>
+  .error-page {
+    padding-top: calc(var(--status-bar-height) + 66px);
+    padding-bottom: calc(var(--uni-safe-area-inset-bottom) + 26px);
+    box-sizing: border-box;
+    background-color: #ffffff;
+  }
+
+  .error-content {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    padding: 0 28px;
+    box-sizing: border-box;
+  }
+
+  .status-code {
+    height: 71px;
+    line-height: 71px;
+    color: var(--main-color);
+    font-size: 70px;
+    font-weight: 500;
+    letter-spacing: 9px;
+    text-align: center;
+    padding-left: 9px;
+    text-shadow: 0 5px 11px rgba(0, 0, 0, 0.12);
+  }
+
+  .title {
+    margin-top: 17px;
+    color: var(--main-color);
+    font-size: 23px;
+    line-height: 33px;
+    letter-spacing: 5px;
+    text-align: center;
+  }
+
+  .desc {
+    margin-top: 9px;
+    color: #858585;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 4px;
+    text-align: center;
+  }
+
+  .empty-image {
+    width: 310px;
+    height: 310px;
+    margin-top: 20px;
+  }
+
+  .home-btn {
+    width: 216px;
+    height: 40px;
+    margin-top: 29px;
+    padding: 0;
+    border-width: 0;
+    border-radius: 20px;
+    background-color: var(--main-color) !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+    color: #ffffff !important;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 40px;
+    letter-spacing: 5px;
+    text-align: center;
+    padding-left: 5px;
+  }
+
+  /* #ifndef APP */
+  .home-btn::after {
+    border-width: 0;
+  }
+  /* #endif */
+
+  .home-btn-hover {
+    opacity: 0.9;
+  }
+</style>

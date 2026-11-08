@@ -42,7 +42,16 @@
 
           <view v-if="vk.pubfn.isNotNull(loadError)" class="notice-card">
             <text class="error-text">{{ loadError }}</text>
-            <button v-if="hasSession" class="small-btn" :class="{ 'button-disabled': busy }" :hover-class="(busy) ? 'none' : 'button-hover'" :loading="loading.status" @click="retryStatus">重新获取状态</button>
+            <button
+              v-if="hasSession"
+              class="small-btn"
+              :class="{ 'button-disabled': busy }"
+              :hover-class="busy ? 'none' : 'button-hover'"
+              :loading="loading.status"
+              @click="retryStatus"
+            >
+              重新获取状态
+            </button>
           </view>
 
           <view v-if="!hasSession" class="action-section">
@@ -56,7 +65,7 @@
               class="action-btn danger-btn"
               type="warn"
               :class="{ 'button-disabled': actionsDisabled }"
-              :hover-class="(actionsDisabled) ? 'none' : 'button-hover'"
+              :hover-class="actionsDisabled ? 'none' : 'button-hover'"
               :loading="loading.close || operation === 'close'"
               @click="askToClose"
             >
@@ -67,16 +76,30 @@
               class="action-btn success-btn"
               type="primary"
               :class="{ 'button-disabled': actionsDisabled }"
-              :hover-class="(actionsDisabled) ? 'none' : 'button-hover'"
+              :hover-class="actionsDisabled ? 'none' : 'button-hover'"
               :loading="loading.open || operation === 'open'"
               @click="askToRestore"
             >
               恢复账号
             </button>
-            <button v-if="isPending" class="action-btn outline-danger-btn" :class="{ 'button-disabled': actionsDisabled || remaining > 0 }" :hover-class="(actionsDisabled || remaining > 0) ? 'none' : 'button-hover'" @click="openFinalConfirmation">
+            <button
+              v-if="isPending"
+              class="action-btn outline-danger-btn"
+              :class="{ 'button-disabled': actionsDisabled || remaining > 0 }"
+              :hover-class="actionsDisabled || remaining > 0 ? 'none' : 'button-hover'"
+              @click="openFinalConfirmation"
+            >
               {{ remaining > 0 ? '冷静期结束后可确认注销' : '确认注销账号' }}
             </button>
-            <button v-if="recovered && !isPending" class="action-btn secondary-btn" :class="{ 'button-disabled': actionsDisabled }" :hover-class="(actionsDisabled) ? 'none' : 'button-hover'" @click="goHome">返回首页</button>
+            <button
+              v-if="recovered && !isPending"
+              class="action-btn secondary-btn"
+              :class="{ 'button-disabled': actionsDisabled }"
+              :hover-class="actionsDisabled ? 'none' : 'button-hover'"
+              @click="goHome"
+            >
+              返回首页
+            </button>
           </view>
 
           <view class="tips-card">
@@ -98,12 +121,12 @@
         <input v-model="confirmText" class="confirm-input" placeholder="确认注销" placeholder-class="confirm-placeholder" :maxlength="20" :disabled="busy" />
         <text v-if="vk.pubfn.isNotNull(actionError)" class="modal-error">{{ actionError }}</text>
         <view class="modal-actions">
-          <button class="modal-btn cancel-btn" :class="{ 'button-disabled': busy }" :hover-class="(busy) ? 'none' : 'button-hover'" @click="closeFinalConfirmation">取消</button>
+          <button class="modal-btn cancel-btn" :class="{ 'button-disabled': busy }" :hover-class="busy ? 'none' : 'button-hover'" @click="closeFinalConfirmation">取消</button>
           <button
             class="modal-btn danger-btn"
             type="warn"
             :class="{ 'button-disabled': busy || confirmText.trim() !== '确认注销' }"
-            :hover-class="(busy || confirmText.trim() !== '确认注销') ? 'none' : 'button-hover'"
+            :hover-class="busy || confirmText.trim() !== '确认注销' ? 'none' : 'button-hover'"
             :loading="loading.confirm || operation === 'confirm'"
             @click="confirmCloseAccount"
           >

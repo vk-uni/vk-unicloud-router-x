@@ -1,20 +1,6 @@
 <template>
   <view class="auth-agreement">
-    <view
-      class="auth-agreement-check"
-      <!-- #ifndef APP -->
-      :aria-label="modelValue ? '取消同意用户协议和隐私政策' : '同意用户协议和隐私政策'"
-      <!-- #endif -->
-      <!-- #ifdef WEB -->
-      role="checkbox"
-      :tabindex="disabled ? -1 : 0"
-      :aria-checked="modelValue"
-      :aria-disabled="disabled"
-      @keydown.enter.prevent="toggleAgreement"
-      @keydown.space.prevent="toggleAgreement"
-      <!-- #endif -->
-      @click="toggleAgreement"
-    >
+    <view class="auth-agreement-check" @click="toggleAgreement">
       <auth-icon :name="modelValue ? 'check-circle' : 'circle'" :size="18" :color="modelValue ? 'var(--main-color, #111111)' : '#858585'" />
     </view>
     <text class="auth-agreement-copy">

@@ -8,7 +8,7 @@
         <view class="demo-card">
           <text class="demo-card-title">准备参数</text>
           <input placeholder-class="demo-placeholder" v-model="message" class="demo-input" :maxlength="100" placeholder="输入要发送的文字" :disabled="state.busy" />
-          <text class="demo-label">成功接口：template/pub.db.sleep </text>
+          <text class="demo-label">成功接口：template/pub.db.sleep</text>
           <text class="demo-body">复用项目已有测试接口，不读写数据库。接口仅返回 code 和 msg，不回显输入的文字。</text>
         </view>
         <view v-for="item in cases" :key="item.id" class="demo-card">
@@ -18,7 +18,7 @@
             class="demo-button"
             :class="{ 'demo-button-disabled': state.busy }"
             type="primary"
-            :hover-class="(state.busy) ? 'none' : 'demo-button-hover'"
+            :hover-class="state.busy ? 'none' : 'demo-button-hover'"
             :loading="state.requestLoading && activeCase === item.id"
             @click="runRequest(item.id)"
           >
@@ -37,7 +37,12 @@
           <view class="demo-code-box">
             <text class="demo-code" :selectable="true">{{ resultText }}</text>
           </view>
-          <button class="demo-button demo-button-secondary" :class="{ 'demo-button-disabled': state.busy }" :hover-class="(state.busy) ? 'none' : 'demo-button-hover'" @click="clearResult">
+          <button
+            class="demo-button demo-button-secondary"
+            :class="{ 'demo-button-disabled': state.busy }"
+            :hover-class="state.busy ? 'none' : 'demo-button-hover'"
+            @click="clearResult"
+          >
             清空结果
           </button>
         </view>

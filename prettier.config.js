@@ -41,5 +41,11 @@ module.exports = {
         quoteProps: 'preserve',
       },
     },
+    {
+      files: '*.uvue',
+      options: {
+        parser: 'vue',
+      },
+    },
   ],
 };

@@ -38,10 +38,32 @@
             </view>
           </view>
           <view class="button-row">
-            <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button primary button-first" :class="{ 'demo-button-disabled': actionLoading }" @click="incrementWithPinia">Pinia +1</button>
-            <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button secondary" :class="{ 'demo-button-disabled': actionLoading }" @click="incrementWithVk">vk.setVuex +1</button>
+            <button
+              :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+              class="demo-button primary button-first"
+              :class="{ 'demo-button-disabled': actionLoading }"
+              @click="incrementWithPinia"
+            >
+              Pinia +1
+            </button>
+            <button
+              :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+              class="demo-button secondary"
+              :class="{ 'demo-button-disabled': actionLoading }"
+              @click="incrementWithVk"
+            >
+              vk.setVuex +1
+            </button>
           </view>
-          <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button outline block-button" :loading="actionLoading" :class="{ 'demo-button-disabled': actionLoading }" @click="runAsyncAction">执行异步 action +1</button>
+          <button
+            :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+            class="demo-button outline block-button"
+            :loading="actionLoading"
+            :class="{ 'demo-button-disabled': actionLoading }"
+            @click="runAsyncAction"
+          >
+            执行异步 action +1
+          </button>
           <text class="code-block" selectable>{{ counterExample }}</text>
           <text class="hint">上方的两倍计数由 computed 自动计算。异步 action 等待 600ms 后更新同一状态。</text>
         </view>
@@ -53,8 +75,22 @@
           <text class="muted-text">vk 读取：{{ vkProfile.nickname }} · {{ vkProfile.city }}</text>
           <input placeholder-class="demo-placeholder" class="demo-input" v-model="nickname" :maxlength="20" placeholder="输入一个演示昵称" :disabled="actionLoading" />
           <view class="button-row">
-            <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button primary button-first" :class="{ 'demo-button-disabled': actionLoading }" @click="saveNicknameWithPinia">Pinia 保存</button>
-            <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button secondary" :class="{ 'demo-button-disabled': actionLoading }" @click="saveNicknameWithVk">vk 保存</button>
+            <button
+              :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+              class="demo-button primary button-first"
+              :class="{ 'demo-button-disabled': actionLoading }"
+              @click="saveNicknameWithPinia"
+            >
+              Pinia 保存
+            </button>
+            <button
+              :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+              class="demo-button secondary"
+              :class="{ 'demo-button-disabled': actionLoading }"
+              @click="saveNicknameWithVk"
+            >
+              vk 保存
+            </button>
           </view>
           <text class="code-block" selectable>{{ profileExample }}</text>
           <text class="hint">这里只修改 $demo.profile，不会修改真实账号资料。</text>
@@ -66,18 +102,39 @@
           <text class="muted-text">已完成 {{ demoStore.completedCount }} 项，共 {{ demoStore.items.length }} 项</text>
           <input placeholder-class="demo-placeholder" class="demo-input" v-model="itemTitle" :maxlength="40" placeholder="添加一条演示事项" :disabled="actionLoading" />
           <view class="button-row">
-            <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button primary button-first" :class="{ 'demo-button-disabled': actionLoading }" @click="addWithPinia">action 添加</button>
-            <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button secondary" :class="{ 'demo-button-disabled': actionLoading }" @click="addWithVk">vk 添加</button>
+            <button
+              :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+              class="demo-button primary button-first"
+              :class="{ 'demo-button-disabled': actionLoading }"
+              @click="addWithPinia"
+            >
+              action 添加
+            </button>
+            <button :hover-class="actionLoading ? 'none' : 'demo-button-hover'" class="demo-button secondary" :class="{ 'demo-button-disabled': actionLoading }" @click="addWithVk">
+              vk 添加
+            </button>
           </view>
           <view v-if="demoStore.items.length === 0" class="empty-list">
             <text class="muted-text">清单是空的，添加一项试试。</text>
           </view>
           <view v-for="item in demoStore.items" :key="item.id" class="list-item">
-            <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="check-button" :class="{ 'check-button-done': item.done, 'demo-button-disabled': actionLoading }" @click="!actionLoading && demoStore.toggleItem(item.id)">
+            <button
+              :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+              class="check-button"
+              :class="{ 'check-button-done': item.done, 'demo-button-disabled': actionLoading }"
+              @click="!actionLoading && demoStore.toggleItem(item.id)"
+            >
               {{ item.done ? '✓' : '○' }}
             </button>
             <text class="item-title" :class="{ 'item-title-done': item.done }">{{ item.title }}</text>
-            <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="remove-button" :class="{ 'demo-button-disabled': actionLoading }" @click="removeWithVk(item.id)">删除</button>
+            <button
+              :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+              class="remove-button"
+              :class="{ 'demo-button-disabled': actionLoading }"
+              @click="removeWithVk(item.id)"
+            >
+              删除
+            </button>
           </view>
           <text class="code-block" selectable>{{ itemsExample }}</text>
           <text class="hint">勾选通过 Pinia action 更新；删除通过 vk.setVuex 写回数组。</text>
@@ -87,7 +144,14 @@
           <text class="section-number">04 / 数据副本</text>
           <text class="section-title">读取不等于绑定</text>
           <text class="body-text">vk.getVuex 返回的是一份数据副本。修改这份副本不会改变原状态。</text>
-          <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button outline block-button" :class="{ 'demo-button-disabled': actionLoading }" @click="changeSnapshot">获取副本，并只修改副本昵称</button>
+          <button
+            :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+            class="demo-button outline block-button"
+            :class="{ 'demo-button-disabled': actionLoading }"
+            @click="changeSnapshot"
+          >
+            获取副本，并只修改副本昵称
+          </button>
           <view class="snapshot-box">
             <text class="body-text">原状态：{{ demoStore.profile.nickname }}</text>
             <text class="muted-text">副本：{{ snapshotName }}</text>
@@ -100,8 +164,22 @@
           <text class="section-number">05 / 共享与持久化</text>
           <text class="section-title">离开页面，数据仍在</text>
           <text class="body-text">到下一页修改计数或昵称，再返回这里。刷新 Web 或重启 App，也会恢复上次的演示数据。</text>
-          <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button primary block-button" :class="{ 'demo-button-disabled': actionLoading }" @click="openSyncPage">打开跨页状态演示</button>
-          <button :hover-class="(actionLoading) ? 'none' : 'demo-button-hover'" class="demo-button outline block-button" :class="{ 'demo-button-disabled': actionLoading }" @click="resetDemo">重置演示数据</button>
+          <button
+            :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+            class="demo-button primary block-button"
+            :class="{ 'demo-button-disabled': actionLoading }"
+            @click="openSyncPage"
+          >
+            打开跨页状态演示
+          </button>
+          <button
+            :hover-class="actionLoading ? 'none' : 'demo-button-hover'"
+            class="demo-button outline block-button"
+            :class="{ 'demo-button-disabled': actionLoading }"
+            @click="resetDemo"
+          >
+            重置演示数据
+          </button>
           <text class="hint">持久化由项目现有 store 入口统一处理。重置只影响 $demo 模块。</text>
         </view>
       </view>

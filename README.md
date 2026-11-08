@@ -6,10 +6,17 @@
 
 ## 版本选择
 
-| 版本                     | 插件市场地址                                                                    |
-| ------------------------ | ------------------------------------------------------------------------------- |
-| **uni-app x 蒸汽模式版** | [uni-app x 蒸汽模式版](https://ext.dcloud.net.cn/plugin?name=vk-cloud-router-x) |
-| uni-app 版               | [uni-app 版](https://ext.dcloud.net.cn/plugin?name=vk-cloud-router)             |
+| 版本                     | 插件市场地址                                                            |
+| ------------------------ | ----------------------------------------------------------------------- |
+| **uni-app x 蒸汽模式版** | [跳转插件市场](https://ext.dcloud.net.cn/plugin?name=vk-cloud-router-x) |
+| uni-app 版               | [跳转插件市场](https://ext.dcloud.net.cn/plugin?name=vk-cloud-router)   |
+
+## Git 仓库地址
+
+| 版本                     | 国内访问                                                         | 海外访问                                                                |
+| ------------------------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **uni-app x 蒸汽模式版** | [跳转 Gitee 仓库](https://gitee.com/vk-uni/vk-unicloud-router-x) | [跳转 GitHub 仓库](https://github.com/qq370725567/vk-unicloud-router-x) |
+| uni-app 版               | [跳转 Gitee 仓库](https://gitee.com/vk-uni/vk-uni-cloud-router)  | [跳转 GitHub 仓库](https://github.com/qq370725567/vk-unicloud-router)   |
 
 ## 框架文档
 

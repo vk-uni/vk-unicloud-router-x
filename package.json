@@ -1,7 +1,7 @@
 {
   "id": "vk-cloud-router-x",
   "name": "vk-cloud-router-x",
-  "displayName": "【开箱即用】vk-unicloud 全栈开发框架 uni-app x 蒸汽模式版本 - 一个函数搞定整套系统",
+  "displayName": "【开箱即用】vk-unicloud 全栈开发框架 uni-app x 版本 - 一个函数搞定整套系统",
   "version": "1.0.0",
   "description": "vk-unicloud 全栈开发框架的 uni-app x 蒸汽模式版本，集成常用业务 API，简化数据库操作，助你快速构建云开发应用",
   "main": "main.ts",

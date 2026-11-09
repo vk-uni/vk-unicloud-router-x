@@ -13,10 +13,10 @@
 
 ## Git 仓库地址
 
-| 版本                     | 国内访问                                                         |
-| ------------------------ | ---------------------------------------------------------------- |
-| **uni-app x 蒸汽模式版** | [跳转 Gitee 仓库](https://gitee.com/vk-uni/vk-unicloud-router-x) |
-| uni-app 版               | [跳转 Gitee 仓库](https://gitee.com/vk-uni/vk-uni-cloud-router)  |
+| 版本                     | 国内访问                                                         | 海外访问                                                               |
+| ------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **uni-app x 蒸汽模式版** | [跳转 Gitee 仓库](https://gitee.com/vk-uni/vk-unicloud-router-x) | [跳转 GitHub 仓库](https://github.com/vk-uni/vk-unicloud-router-x.git) |
+| uni-app 版               | [跳转 Gitee 仓库](https://gitee.com/vk-uni/vk-uni-cloud-router)  | [跳转 GitHub 仓库](https://github.com/vk-uni/vk-unicloud-router)       |
 
 ## 框架文档
 

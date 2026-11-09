@@ -1,14 +1,14 @@
 {
   "id": "vk-unicloud",
   "displayName": "vk-unicloud-router开发框架核心库 - 仅需一个云函数即可搞定整个系统的API",
-  "version": "2.26.3",
+  "version": "3.0.0",
   "description": "此为vk-unicloud-router框架核心库（新手建议下载完整框架项目）已集成uni-id支持云函数url化。众多现成API，内置小白也能轻松上手的数据库API。使你项目刚起步进度就是百分之50",
   "keywords": [
     "vk-unicloud-router",
     "云函数路由、云对象路由",
     "vk云开发",
     "内置uni-id、数据库baseDao",
-    "内置众多API、工具包"
+    "支持uni-app和uni-app-x"
 ],
   "author": "VK",
   "repository": "https://gitee.com/vk-uni/vk-uni-cloud-router",
@@ -38,12 +38,8 @@
     "type": "unicloud-template-function",
     "darkmode": "x",
     "i18n": "x",
-    "widescreen": "x"
-  },
-  "engines": {
-    "HBuilderX": "^3.1.0",
-    "uni-app": "^4.36",
-    "uni-app-x": ""
+    "widescreen": "x",
+    "vapor": "-"
   },
   "uni_modules": {
     "dependencies": [

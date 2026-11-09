@@ -144,7 +144,7 @@
   .example-number {
     font-size: 12px;
     font-weight: bold;
-    color: var(--main-color);
+    color: #111111;
     background-color: #f4f4f4;
     padding: 6px 8px;
     border-radius: 8px;
@@ -153,6 +153,6 @@
   .example-title {
     font-size: 18px;
     font-weight: bold;
-    color: var(--main-color);
+    color: #111111;
   }
 </style>

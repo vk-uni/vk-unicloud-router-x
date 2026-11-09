@@ -30,7 +30,7 @@
   .title {
     font-size: 28px;
     font-weight: bold;
-    color: var(--main-color);
+    color: #111111;
     text-align: center;
   }
   .description {

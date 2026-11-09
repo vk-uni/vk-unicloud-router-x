@@ -1,3 +1,8 @@
+page {
+  --main-color: #111111;
+  background-color: #ffffff;
+}
+
 .auth-page {
   display: flex;
   flex-direction: column;
@@ -46,7 +51,7 @@
   font-size: 30px;
   font-weight: 700;
   line-height: 44px;
-  color: var(--main-color, #111111);
+  color: #111111;
 }
 
 .auth-subtitle {

@@ -12,13 +12,13 @@
 .demo-eyebrow {
   font-size: 12px;
   font-weight: bold;
-  color: var(--main-color);
+  color: #111111;
   margin-bottom: 10px;
 }
 .demo-title {
   font-size: 28px;
   font-weight: bold;
-  color: var(--main-color);
+  color: #111111;
   margin-bottom: 12px;
 }
 .demo-description {
@@ -36,7 +36,7 @@
 .demo-card-title {
   font-size: 17px;
   font-weight: bold;
-  color: var(--main-color);
+  color: #111111;
   margin-bottom: 10px;
 }
 .demo-body {
@@ -88,7 +88,7 @@
   border-color: #e5e5e5;
   background-color: #ffffff;
   font-size: 14px;
-  color: var(--main-color);
+  color: #111111;
 }
 .demo-placeholder {
   color: #767676;
@@ -104,7 +104,7 @@
 .demo-code {
   font-size: 12px;
   line-height: 20px;
-  color: var(--main-color);
+  color: #111111;
   white-space: pre-wrap;
   word-break: break-all;
 }

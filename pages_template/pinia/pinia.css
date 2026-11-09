@@ -28,7 +28,7 @@ page {
 }
 
 .eyebrow {
-  color: var(--main-color);
+  color: #111111;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 2px;
@@ -36,7 +36,7 @@ page {
 
 .hero-title {
   margin-top: 10px;
-  color: var(--main-color);
+  color: #111111;
   font-size: 27px;
   font-weight: 600;
   line-height: 38px;
@@ -97,7 +97,7 @@ page {
 .section-title {
   margin-top: 8px;
   margin-bottom: 12px;
-  color: var(--main-color);
+  color: #111111;
   font-size: 19px;
   font-weight: 600;
   line-height: 28px;
@@ -207,7 +207,7 @@ page {
   border-style: solid;
   border-color: #b9b9b9;
   background-color: #ffffff;
-  color: var(--main-color);
+  color: #111111;
   font-size: 11px;
   line-height: 20px;
   word-break: break-all;
@@ -222,7 +222,7 @@ page {
 }
 
 .body-text {
-  color: var(--main-color);
+  color: #858585;
   font-size: 14px;
   line-height: 24px;
 }
@@ -244,7 +244,7 @@ page {
   border-style: solid;
   border-color: #858585;
   background-color: #ffffff;
-  color: var(--main-color);
+  color: #111111;
   font-size: 14px;
 }
 
